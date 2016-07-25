@@ -2,6 +2,7 @@
   "main": "./integration.js",
   "acronym": "VT",
   "name": "VirusTotal",
+  "version": "0.0.1",
   "description": "Virus Total api integration",
   "options": [
     {
