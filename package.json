@@ -1,0 +1,18 @@
+{
+  "main": "./integration.js",
+  "acronym": "VT",
+  "name": "Virus Total",
+  "description": "Virus Total api integration",
+  "options": [
+    {
+      "key": "apikey",
+      "name": "API Key",
+      "type": "text",
+      "default": "",
+      "userCanEdit": true,
+      "adminOnly": false
+    }
+  ],
+  "dependencies": {
+  }
+}
