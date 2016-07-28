@@ -13,12 +13,11 @@ var doLookup = function(entities, options, cb){
         return;
     }
 
-    var results = [];
-    var hashes = [];
+    var results = new Array();
+    var hashes = new Array();
     entities.forEach(function(entity){
-        var entityLower = entity.toLowerCase();
-        if(hashReg.test(entityLower)){
-            hashes.push(entityLower);
+        if(entity.isHash){
+            hashes.push(entity.value);
         }
     });
 
@@ -29,6 +28,7 @@ var doLookup = function(entities, options, cb){
             return;
         }
 
+        //do the lookup
         rest.post(url).send({
             "apikey": options.apikey,
             "resource": hashes.join(', ')
@@ -46,6 +46,7 @@ var doLookup = function(entities, options, cb){
                         });
                     }
                 });
+                //send the results to the user
                 cb(null, results.length, results);
             }
 
