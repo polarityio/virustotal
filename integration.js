@@ -1,6 +1,6 @@
 'use strict';
 var rest = require('unirest');
-var _ = require('underscore');
+var _ = require('lodash');
 var config = require('./package.json');
 var util = require('util');
 var net = require('net');

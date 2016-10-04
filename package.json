@@ -15,6 +15,7 @@
     }
   ],
   "dependencies": {
-    "unirest": "^0.5.0"
+    "unirest": "^0.5.0",
+    "lodash": "^4.16"
   }
 }
