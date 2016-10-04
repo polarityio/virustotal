@@ -3,6 +3,7 @@
   "acronym": "VT",
   "name": "VirusTotal",
   "description": "Virus Total api integration",
+  "version": "0.0.1",
   "options": [
     {
       "key": "apikey",
