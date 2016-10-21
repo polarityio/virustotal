@@ -38,7 +38,7 @@ var doLookup = function(entities, options, cb){
                     if(item.response_code === 1){
                         results.push({
                             entity: item.resource,
-                            result:{
+                            data:{
                                 entity_name: item.resource,
                                 tags: [util.format("%d <i class='fa fa-bug'></i> / %d", item.positives, item.total)],
                                 details: item
