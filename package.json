@@ -1,8 +1,6 @@
 {
   "main": "./integration.js",
-  "acronym": "VT",
   "name": "VirusTotal",
-  "description": "Virus Total api integration",
   "version": "0.0.1",
   "private": true,
   "options": [
@@ -17,6 +15,7 @@
   ],
   "dependencies": {
     "request": "^2.75",
-    "lodash": "^4.16"
+    "lodash": "^4.16",
+    "async": "2.1.4"
   }
 }
