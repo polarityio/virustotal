@@ -1,0 +1,143 @@
+<div class="virustotal-details-block default-block">
+    <div class="notification-body-details-container">
+        {{#if (eq virusTotalType 'ip')}}
+            <div class="padding-0-5">
+                <p class="padded">
+                    <a href="{{ipVirusTotalLink}}">View in VirusTotal <i class="btb bt-external-link"></i></a>
+                </p>
+                <p>
+                    <b class="muted"><i class="bts bt-globe"></i> Number of
+                        Resolutions</b>: {{summarizedData.numResolutions}}
+                </p>
+            </div>
+            <table style="margin-top:5px;">
+                <thead>
+                <th>Detections</th>
+                <th>Positive %</th>
+                <th>Positives <i class="fa fa-bug"></i></th>
+                <th>Total</th>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Overall</td>
+                    <td>{{summarizedData.overallPercent}}</td>
+                    <td>{{summarizedData.overallPositives}}</td>
+                    <td>{{summarizedData.overallTotal}}</td>
+                </tr>
+                <tr>
+                    <td>URLs</td>
+                    <td>{{summarizedData.detectedUrlsPercent}}</td>
+                    <td>{{summarizedData.detectedUrlsPositive}}</td>
+                    <td>{{summarizedData.detectedUrlsTotal}}</td>
+                </tr>
+                <tr>
+                    <td>Communicating</td>
+                    <td>{{summarizedData.detectedCommunicatingPercent}}</td>
+                    <td>{{summarizedData.detectedCommunicatingPositive}}</td>
+                    <td>{{summarizedData.detectedCommunicatingTotal}}</td>
+                </tr>
+                <tr>
+                    <td>Downloaded</td>
+                    <td>{{summarizedData.detectedDownloadingPercent}}</td>
+                    <td>{{summarizedData.detectedDownloadingPositive}}</td>
+                    <td>{{summarizedData.detectedDownloadingTotal}}</td>
+                </tr>
+                <tr>
+                    <td>Embedded</td>
+                    <td>{{summarizedData.detectedReferrerPercent}}</td>
+                    <td>{{summarizedData.detectedReferrerPositive}}</td>
+                    <td>{{summarizedData.detectedReferrerTotal}}</td>
+                </tr>
+                </tbody>
+            </table>
+            <table style="margin-top:5px;">
+                <thead>
+                <th>
+                    Hostname Resolutions
+                    <span class="table-header-info">
+                  [showing {{numResolutionsShown}} of {{block.data.details.resolutions.length}}]
+              </span>
+                </th>
+                </thead>
+                <tbody>
+                {{#each (limit block.data.details.resolutions maxResolutionsToShow) as |resolution|}}
+                    <tr>
+                        <td>
+                            {{resolution.hostname}}
+                            <p>
+                                <b class="muted">Last Resolved</b>: {{moment-time resolution.lastResolved}}
+                            </p>
+                        </td>
+                    </tr>
+                {{/each}}
+                </tbody>
+            </table>
+            <table style="margin-top:5px;">
+                <thead>
+                <tr>
+                    <th colspan="2">
+                        Detected URLs
+                        <span class="table-header-info">
+                    [showing {{numUrlsShown}} of {{block.data.details.detectedUrls.length}}]
+                </span>
+                    </th>
+                </tr>
+                <tr>
+                    <th>Positives</th>
+                    <th>URL</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{#each (limit block.data.details.detectedUrls maxUrlsToShow) as |url|}}
+                    <tr>
+                        <td class="positives">{{url.positives}} / {{url.total}}</td>
+                        <td>
+                            {{url.url}}
+                            <p>
+                                <b class="muted">Scan Date: </b>{{moment-time url.scanDate}}
+                            </p>
+                        </td>
+                    </tr>
+                {{/each}}
+                </tbody>
+            </table>
+        {{/if}}
+
+        {{#if (eq virusTotalType 'file')}}
+            <div class="padding-0-5">
+                <p>
+                    <a href="{{block.data.details.permalink}}">View in VirusTotal <i class="btb bt-external-link"></i></a>
+                </p>
+                <p>
+                    <b class="muted">Scan Date</b>: {{moment-time block.data.details.scanDate}}
+                </p>
+                <p>
+                    {{block.data.details.positives}} positive detections out of {{block.data.details.total}}
+                </p>
+            </div>
+            <table class="padding-0-5" style="margin-top: 10px;">
+                <thead>
+                <th></th>
+                <th>Scanner</th>
+                <th>Result</th>
+                </thead>
+                <tbody>
+                {{#each-in block.data.details.scans as |key value|}}
+                    <tr>
+                        <td style="width:20px"><i class="{{if value.detected 'fa fa-bug' 'bts bt-check'}}"></i></td>
+                        <td>{{key}}</td>
+                        <td>
+                            {{#if value.result}}
+                                {{value.result}}
+                            {{else}}
+                                <span class="success">[No Detection]</span>
+                            {{/if}}
+                        </td>
+                    </tr>
+                {{/each-in}}
+                </tbody>
+            </table>
+
+        {{/if}}
+    </div>
+</div>

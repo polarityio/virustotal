@@ -5,10 +5,18 @@ var _ = require('lodash');
 var util = require('util');
 var net = require('net');
 var async = require('async');
+var Logger;
 const HASH_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/file/report";
 const IP_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/ip-address/report";
 
-var doLookup = function(entities, options, cb){
+function doLookup(entities, options, cb){
+    //
+    // Logger.info("LOGGING FROM VIRUSTOTAL");
+    // Logger.warn("Warning from VT");
+    // Logger.error("ERror from VT");
+    // Logger.debug("Debug from VT");
+    // Logger.trace("Trace from VT");
+
     if(typeof cb !== 'function'){
         return;
     }
@@ -18,16 +26,15 @@ var doLookup = function(entities, options, cb){
         return;
     }
 
-
     var hashes = new Array();
     var ipv4Entities = new Array();
     var entityLookup = {};
 
     entities.forEach(function(entity){
-        if(entity.isHash){
+        if((entity.isMD5 || entity.isSHA1 || entity.isSHA256) && options.lookupFiles){
             hashes.push(entity.value);
             entityLookup[entity.value.toLowerCase()] = entity;
-        }else if(entity.isIPv4 && !entity.isPrivateIP){
+        }else if(entity.isIPv4 && !entity.isPrivateIP && options.lookupIps){
             ipv4Entities.push(entity);
         }
     });
@@ -72,9 +79,9 @@ var doLookup = function(entities, options, cb){
 
         cb(null, combinedResults);
     });
-};
+}
 
-var _handleRequestError = function(err, response, body, options, cb){
+function _handleRequestError(err, response, body, options, cb){
     if(err){
         cb(_createJsonErrorPayload("Unable to connect to VirusTotal server", null, '500', '2A', 'VirusTotal HTTP Request Failed', {
             err: err
@@ -101,11 +108,9 @@ var _handleRequestError = function(err, response, body, options, cb){
     }
 
     cb(null, body);
-};
+}
 
-var _lookupHash = function(hashesArray, entityLookup, options, done){
-
-
+function _lookupHash(hashesArray, entityLookup, options, done){
     //do the lookup
     request({
         uri: HASH_LOOKUP_URI,
@@ -138,9 +143,9 @@ var _lookupHash = function(hashesArray, entityLookup, options, done){
             done(null, hashLookupResults);
         });
     });
-};
+}
 
-var _processHashLookupItem = function(virusTotalResultItem, entityLookupHash, hashLookupResults){
+function _processHashLookupItem(virusTotalResultItem, entityLookupHash, hashLookupResults){
     let entity = entityLookupHash[virusTotalResultItem.resource.toLowerCase()];
     if(virusTotalResultItem.response_code === 1){
         hashLookupResults.push({
@@ -163,11 +168,9 @@ var _processHashLookupItem = function(virusTotalResultItem, entityLookupHash, ha
     }
 
     return hashLookupResults;
-};
+}
 
-
-
-var _lookupIp = function(ipEntity, options, done){
+function _lookupIp(ipEntity, options, done){
     //do the lookup
     request({
         uri: IP_LOOKUP_URI,
@@ -188,9 +191,9 @@ var _lookupIp = function(ipEntity, options, done){
             done(null, ipLookupResults);
         });
     });
-};
+}
 
-var _processIpLookupItem = function(virusTotalResultItem, ipEntity, ipLookupResults){
+function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults){
     /**
      * asn (string)
      * response_code (integer)
@@ -244,7 +247,8 @@ var _processIpLookupItem = function(virusTotalResultItem, ipEntity, ipLookupResu
     }
 
     return ipLookupResults;
-};
+}
+
 /**
  * Helper method that creates a fully formed JSON payload for a single error
  * @param msg
@@ -255,15 +259,15 @@ var _processIpLookupItem = function(virusTotalResultItem, ipEntity, ipLookupResu
  * @returns {{errors: *[]}}
  * @private
  */
-var _createJsonErrorPayload = function (msg, pointer, httpCode, code, title, meta) {
+function _createJsonErrorPayload(msg, pointer, httpCode, code, title, meta) {
     return {
         errors: [
             _createJsonErrorObject(msg, pointer, httpCode, code, title, meta)
         ]
     }
-};
+}
 
-var _createJsonErrorObject = function (msg, pointer, httpCode, code, title, meta) {
+function _createJsonErrorObject(msg, pointer, httpCode, code, title, meta) {
     let error = {
         detail: msg,
         status: httpCode.toString(),
@@ -282,13 +286,27 @@ var _createJsonErrorObject = function (msg, pointer, httpCode, code, title, meta
     }
 
     return error;
-};
+}
 
-var startup = function(){
+function startup(logger){
+    Logger = logger;
+}
 
-};
+function validateOptions(userOptions, cb) {
+    let errors = [];
+    if(typeof userOptions.apiKey.value !== 'string' ||
+        (typeof userOptions.apiKey.value === 'string' && userOptions.apiKey.value.length === 0)){
+        errors.push({
+            key: 'apiKey',
+            message: 'You must provide a VirusTotal API key'
+        })
+    }
+
+    cb(null, errors);
+}
 
 module.exports = {
     doLookup: doLookup,
-    startup: startup
+    startup: startup,
+    validateOptions: validateOptions
 };
