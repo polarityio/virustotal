@@ -17,5 +17,12 @@
     "request": "^2.75",
     "lodash": "^4.16",
     "async": "2.1.4"
+  },
+  "devDependencies": {
+    "chai": "~3.5",
+    "mocha": "~3.2"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --recursive"
   }
 }
