@@ -1,13 +1,13 @@
 <div class="virustotal-details-block default-block">
     <div class="notification-body-details-container">
-        {{#if (eq virusTotalType 'ip')}}
+        {{#if (eq block.data.details.type 'ip')}}
             <div class="padding-0-5">
                 <p class="padded">
                     <a href="{{ipVirusTotalLink}}">View in VirusTotal <i class="btb bt-external-link"></i></a>
                 </p>
                 <p>
                     <b class="muted"><i class="bts bt-globe"></i> Number of
-                        Resolutions</b>: {{summarizedData.numResolutions}}
+                        Resolutions</b>: {{block.data.details.numResolutions}}
                 </p>
             </div>
             <table style="margin-top:5px;">
@@ -20,33 +20,33 @@
                 <tbody>
                 <tr>
                     <td>Overall</td>
-                    <td>{{summarizedData.overallPercent}}</td>
-                    <td>{{summarizedData.overallPositives}}</td>
-                    <td>{{summarizedData.overallTotal}}</td>
+                    <td>{{block.data.details.overallPercent}}</td>
+                    <td>{{block.data.details.overallPositives}}</td>
+                    <td>{{block.data.details.overallTotal}}</td>
                 </tr>
                 <tr>
                     <td>URLs</td>
-                    <td>{{summarizedData.detectedUrlsPercent}}</td>
-                    <td>{{summarizedData.detectedUrlsPositive}}</td>
-                    <td>{{summarizedData.detectedUrlsTotal}}</td>
+                    <td>{{block.data.details.detectedUrlsPercent}}</td>
+                    <td>{{block.data.details.detectedUrlsPositive}}</td>
+                    <td>{{block.data.details.detectedUrlsTotal}}</td>
                 </tr>
                 <tr>
                     <td>Communicating</td>
-                    <td>{{summarizedData.detectedCommunicatingPercent}}</td>
-                    <td>{{summarizedData.detectedCommunicatingPositive}}</td>
-                    <td>{{summarizedData.detectedCommunicatingTotal}}</td>
+                    <td>{{block.data.details.detectedCommunicatingSamplesPercent}}</td>
+                    <td>{{block.data.details.detectedCommunicatingSamplesPositive}}</td>
+                    <td>{{block.data.details.detectedCommunicatingSamplesTotal}}</td>
                 </tr>
                 <tr>
                     <td>Downloaded</td>
-                    <td>{{summarizedData.detectedDownloadingPercent}}</td>
-                    <td>{{summarizedData.detectedDownloadingPositive}}</td>
-                    <td>{{summarizedData.detectedDownloadingTotal}}</td>
+                    <td>{{block.data.details.detectedDownloadedSamplesPercent}}</td>
+                    <td>{{block.data.details.detectedDownloadedSamplesPositive}}</td>
+                    <td>{{block.data.details.detectedDownloadedSamplesTotal}}</td>
                 </tr>
                 <tr>
                     <td>Embedded</td>
-                    <td>{{summarizedData.detectedReferrerPercent}}</td>
-                    <td>{{summarizedData.detectedReferrerPositive}}</td>
-                    <td>{{summarizedData.detectedReferrerTotal}}</td>
+                    <td>{{block.data.details.detectedReferrerSamplesPercent}}</td>
+                    <td>{{block.data.details.detectedReferrerSamplesPositive}}</td>
+                    <td>{{block.data.details.detectedReferrerSamplesTotal}}</td>
                 </tr>
                 </tbody>
             </table>
@@ -55,7 +55,7 @@
                 <th>
                     Hostname Resolutions
                     <span class="table-header-info">
-                  [showing {{numResolutionsShown}} of {{block.data.details.resolutions.length}}]
+                  [showing numResolutionsShown of {{block.data.details.numResolutions}}]
               </span>
                 </th>
                 </thead>
@@ -65,7 +65,7 @@
                         <td>
                             {{resolution.hostname}}
                             <p>
-                                <b class="muted">Last Resolved</b>: {{moment-time resolution.lastResolved}}
+                                <b class="muted">Last Resolved</b>: {{moment-time resolution.last_resolved}}
                             </p>
                         </td>
                     </tr>
@@ -94,7 +94,7 @@
                         <td>
                             {{url.url}}
                             <p>
-                                <b class="muted">Scan Date: </b>{{moment-time url.scanDate}}
+                                <b class="muted">Scan Date: </b>{{moment-time url.scan_date}}
                             </p>
                         </td>
                     </tr>
@@ -109,7 +109,7 @@
                     <a href="{{block.data.details.permalink}}">View in VirusTotal <i class="btb bt-external-link"></i></a>
                 </p>
                 <p>
-                    <b class="muted">Scan Date</b>: {{moment-time block.data.details.scanDate}}
+                    <b class="muted">Scan Date</b>: {{moment-time block.data.details.scan_date}}
                 </p>
                 <p>
                     {{block.data.details.positives}} positive detections out of {{block.data.details.total}}

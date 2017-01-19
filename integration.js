@@ -1,14 +1,21 @@
 'use strict';
 
-var request = require('request');
-var _ = require('lodash');
-var util = require('util');
-var net = require('net');
-var async = require('async');
-var Logger;
+let request = require('request');
+let _ = require('lodash');
+let util = require('util');
+let net = require('net');
+let async = require('async');
+let Logger;
+
 const HASH_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/file/report";
 const IP_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/ip-address/report";
 
+/**
+ *
+ * @param entities
+ * @param options
+ * @param cb
+ */
 function doLookup(entities, options, cb){
     //
     // Logger.info("LOGGING FROM VIRUSTOTAL");
@@ -26,9 +33,9 @@ function doLookup(entities, options, cb){
         return;
     }
 
-    var hashes = new Array();
-    var ipv4Entities = new Array();
-    var entityLookup = {};
+    let hashes = new Array();
+    let ipv4Entities = new Array();
+    let entityLookup = {};
 
     entities.forEach(function(entity){
         if((entity.isMD5 || entity.isSHA1 || entity.isSHA256) && options.lookupFiles){
@@ -102,8 +109,17 @@ function _handleRequestError(err, response, body, options, cb){
         return;
     }
 
+    if(response.statusCode === 403){
+        cb('You do not have permission to access VirusTotal.  Please check your API key');
+        return;
+    }
+
     if (response.statusCode !== 200) {
-        cb(body);
+        if(body){
+            cb(body);
+        }else{
+            cb(response.statusMessage);
+        }
         return;
     }
 
@@ -147,6 +163,7 @@ function _lookupHash(hashesArray, entityLookup, options, done){
 
 function _processHashLookupItem(virusTotalResultItem, entityLookupHash, hashLookupResults){
     let entity = entityLookupHash[virusTotalResultItem.resource.toLowerCase()];
+
     if(virusTotalResultItem.response_code === 1){
         hashLookupResults.push({
             entity: entity,
@@ -181,13 +198,13 @@ function _lookupIp(ipEntity, options, done){
         },
         json: true
     }, function (err, response, body) {
-        _handleRequestError(err, response, body, options, function(err, body){
+        _handleRequestError(err, response, body, options, function(err, result){
             if(err){
                 done(err);
                 return;
             }
             let ipLookupResults = [];
-            ipLookupResults = _processIpLookupItem(body, ipEntity, ipLookupResults);
+            ipLookupResults = _processIpLookupItem(result, ipEntity, ipLookupResults);
             done(null, ipLookupResults);
         });
     });
@@ -228,16 +245,23 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults){
      *      .hostname
      */
     if(virusTotalResultItem.response_code === 1){
+        // Compute the details
+        let details = _computeIpDetails(virusTotalResultItem);
+
         ipLookupResults.push({
             entity: ipEntity,
             isVolatile: false,
             displayValue: ipEntity.value,
             data:{
-                summary: [virusTotalResultItem.as_owner, virusTotalResultItem.asn, virusTotalResultItem.country],
-                details: virusTotalResultItem
+                summary: [
+                    util.format("%d <i class='bts bt-globe integration-text-bold-color'></i>", details.numResolutions),
+                    util.format("%d <i class='fa fa-bug integration-text-bold-color'></i> / %d", details.overallPositives, details.overallTotal)
+                ],
+                details: details
             }
         });
     }else if(virusTotalResultItem.response_code === 0){
+        // This was an empty result so we just push a null data value
         ipLookupResults.push({
             entity: ipEntity,
             isVolatile: false,
@@ -247,6 +271,65 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults){
     }
 
     return ipLookupResults;
+}
+
+function _computeIpDetails(result){
+    let computedResults = {
+        type: 'ip',
+        overallPositives: 0,
+        overallTotal: 0,
+        overallPercent: 0,
+        detectedUrlsPositive: 0,
+        detectedUrlsTotal: 0,
+        detectedCommunicatingSamplesPositive: 0,
+        detectedCommunicatingSamplesTotal: 0,
+        detectedDownloadedSamplesPositive: 0,
+        detectedDownloadedSamplesTotal: 0,
+        detectedReferrerSamplesPositive: 0,
+        detectedReferrerSamplesTotal: 0,
+        numResolutions: Array.isArray(result.resolutions) ? result.resolutions.length : 0,
+        detectedUrls: result.detected_urls,
+        resolutions: result.resolutions
+    };
+
+    let keys = ['detectedUrls', 'detectedCommunicatingSamples',
+        'detectedDownloadedSamples', 'detectedReferrerSamples'];
+
+    let keyMappings = {
+        'detectedUrls': 'detected_urls',
+        'detectedCommunicatingSamples': 'detected_communicating_samples',
+        'detectedDownloadedSamples': 'detected_downloaded_samples',
+        'detectedReferrerSamples': 'detected_referrer_samples'
+    };
+
+    keys.forEach(function(key){
+        if(Array.isArray(result[keyMappings[key]])) {
+            result[keyMappings[key]].forEach(function (row) {
+                Logger.info(row);
+                computedResults.overallPositives += row.positives;
+                computedResults.overallTotal += row.total;
+                computedResults[key + 'Positive'] += row.positives;
+                computedResults[key + 'Total'] += row.total;
+            })
+        }else{
+            computedResults[key + 'Positive'] = 0;
+            computedResults[key + 'Total'] = 0;
+        }
+    });
+
+    keys.forEach(function(key){
+       let positive = computedResults[key + 'Positive'];
+       let total = computedResults[key + 'Total'];
+
+       computedResults[key + 'Percent'] = total === 0 ? 'NA' : ((positive / total) * 100).toFixed(0) + '%';
+    });
+
+    computedResults.overallPercent = computedResults.overallTotal === 0 ? 'NA' :
+        ((computedResults.overallPositives / computedResults.overallTotal) * 100).toFixed(0) + '%';
+
+    //Logger.info(computedResults);
+
+    return computedResults;
 }
 
 /**

@@ -30,9 +30,9 @@ module.exports = {
      * @type Array
      * @optional
      */
-    // "styles":[
-    //     "./styles/sample_integration.less"
-    // ],
+    "styles": [
+        "./styles/virustotal.less"
+    ],
     /**
      * Provide custom component logic and template for rendering the integration details block.  If you do not
      * provide a custom template and/or component then the integration will display data as a table of key value
@@ -49,7 +49,7 @@ module.exports = {
             file: "./templates/virustotal.hbs"
         }
     },
-    logging:{
+    logging: {
         // directory is relative to the this integrations directory
         // e.g., if the integration is in /app/polarity-server/integrations/virustotal
         // and you set directoryPath to be `integration-logs` then your logs will go to
@@ -59,7 +59,7 @@ module.exports = {
 
         //directoryPath: '/var/log/polarity-integrations',
         level: 'info',  //trace, debug, info, warn, error, fatal
-        fileName: 'virustotal.log'
+        //fileName: 'virustotal.log'
     },
     /**
      * Options that are displayed to the user/admin in the Polarity integration user-interface.  Should be structured
@@ -68,7 +68,7 @@ module.exports = {
      * @type Array
      * @optional
      */
-    "options":[
+    "options": [
         {
             /**
              * A Unique name for the option.  Should be camelcased (lowercase first letter, uppercase letters for
@@ -77,21 +77,21 @@ module.exports = {
              * @property key
              * @type String             *
              */
-            "key"         : "apiKey",
+            "key": "apiKey",
             /**
              * Human Readable name for the option which will be displayed in the Polarity user interface
              *
              * @property name
              * @type String
              */
-            "name"        : "VirusTotal API Key",
+            "name": "VirusTotal API Key",
             /**
              * A short description for what the option does.  This description is displayed in the user interface
              *
              * @property description
              * @type String
              */
-            "description" : "Your VirusTotal API Key",
+            "description": "Your VirusTotal API Key",
             /**
              * The default value for the option.  Note this value can be either a String or Boolean depending on
              * the @type specified by the `type` property.
@@ -99,14 +99,14 @@ module.exports = {
              * @property default
              * @type String|Boolean
              */
-            "default"     : "",
+            "default": "",
             /**
              * The type for this option.  Can be either "string", "boolean", or "password"
              *
              * @property type
              * @type String
              */
-            "type"        : "text",
+            "type": "text",
             /**
              * If `true`, non-admin users can edit the value of this option and the option will be stored on a
              * per-user basis.  If `false`, the option will be server wide.  Note that for this setting to have
@@ -115,7 +115,7 @@ module.exports = {
              * @property user-can-edit
              * @type Boolean
              */
-            "userCanEdit" : true,
+            "userCanEdit": true,
             /**
              * If set to true, the setting can only be viewed by admins.  For all other users the setting will not appear.
              * Note that if `admin-only` is set to true the value of `user-can-edit` is not applicable.
@@ -123,35 +123,35 @@ module.exports = {
              * @property admin-only
              * @type Boolean
              */
-            "adminOnly"    : false
+            "adminOnly": false
         },
         {
-            "key"         : "lookupIps",
-            "name"        : "Lookup IP Addresses",
-            "description" : "If checked, the integration will lookup IP addresses in VirusTotal",
-            "default"     : true,
-            "type"        : "boolean",
-            "userCanEdit" : true,
-            "adminOnly"    : false
+            "key": "lookupIps",
+            "name": "Lookup IP Addresses",
+            "description": "If checked, the integration will lookup IP addresses in VirusTotal",
+            "default": true,
+            "type": "boolean",
+            "userCanEdit": true,
+            "adminOnly": false
         },
         {
-            "key"         : "lookupFiles",
-            "name"        : "Lookup Files (Hashes)",
-            "description" : "If checked, the integration will lookup files (MD5, SHA1, SHA256) in VirusTotal",
-            "default"     : true,
-            "type"        : "boolean",
-            "userCanEdit" : true,
-            "adminOnly"    : false
+            "key": "lookupFiles",
+            "name": "Lookup Files (Hashes)",
+            "description": "If checked, the integration will lookup files (MD5, SHA1, SHA256) in VirusTotal",
+            "default": true,
+            "type": "boolean",
+            "userCanEdit": true,
+            "adminOnly": false
         },
         {
-            "key"         : "warnOnLookupLimit",
-            "name"        : "API Key Limit Reached Warning",
-            "description" : "Displays a Warning in the Notification Window if you have reached your" +
+            "key": "warnOnLookupLimit",
+            "name": "API Key Limit Reached Warning",
+            "description": "Displays a Warning in the Notification Window if you have reached your" +
             " VirusTotal API key lookup limit",
-            "default"     : false,
-            "type"        : "boolean",
-            "userCanEdit" : true,
-            "adminOnly"    : false
+            "default": false,
+            "type": "boolean",
+            "userCanEdit": true,
+            "adminOnly": false
         }
     ]
 };
