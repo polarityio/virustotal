@@ -165,12 +165,13 @@ function _processHashLookupItem(virusTotalResultItem, entityLookupHash, hashLook
     let entity = entityLookupHash[virusTotalResultItem.resource.toLowerCase()];
 
     if(virusTotalResultItem.response_code === 1){
+        virusTotalResultItem.type = 'file';
         hashLookupResults.push({
             entity: entity,
             isVolatile: false,
             displayValue: entity.value,
             data:{
-                summary: [util.format("%d <i class='fa fa-bug'></i> / %d",
+                summary: [util.format("%d <i class='fa fa-bug integration-text-bold-color'></i> / %d",
                     virusTotalResultItem.positives, virusTotalResultItem.total)],
                 details: virusTotalResultItem
             }
@@ -274,6 +275,8 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults){
 }
 
 function _computeIpDetails(result){
+
+    // Initialize our computed values that we want to pass through to the notification window
     let computedResults = {
         type: 'ip',
         overallPositives: 0,
