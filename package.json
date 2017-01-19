@@ -1,9 +1,7 @@
 {
   "main": "./integration.js",
-  "acronym": "VT",
   "name": "VirusTotal",
-  "description": "Virus Total api integration",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "options": [
     {
@@ -16,7 +14,15 @@
     }
   ],
   "dependencies": {
-    "unirest": "^0.5.0",
-    "lodash": "^4.16"
+    "request": "^2.75",
+    "lodash": "^4.16",
+    "async": "2.1.4"
+  },
+  "devDependencies": {
+    "chai": "~3.5",
+    "mocha": "~3.2"
+  },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --recursive"
   }
 }
