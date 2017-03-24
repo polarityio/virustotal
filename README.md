@@ -16,7 +16,7 @@ VirusTotal is a free service that analyzes suspicious files and URLs and facilit
 
 Your VirusTotal API Key (free or commercial)
 
-## Lookup IP Addresses
+### Lookup IP Addresses
 
 If checked, the VirusTotal integration will send IPv4 addresses to VirusTotal for lookup.
 
