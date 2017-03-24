@@ -94,7 +94,7 @@ git clone --branch <version> https://github.com/polarityio/virustotal.git
 3. Change into the integration directory
 
  ```bash
-cd wikipedia
+cd virustotal
 ```
 
 4. Use `npm` to install the integration's dependencies
