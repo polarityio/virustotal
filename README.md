@@ -2,7 +2,7 @@
 
 Polarity's VirusTotal integration gives users access to automated MD5, SHA1, SHA256, and IPv4 lookups within VirusTotal.
 
-> VirusTotal is a free service that analyzes suspicious files and URLs and facilitates the quick detection of viruses, worms, trojans, and all kinds of malware.  For more information about VirusTotal please visit https://www.virustotal.com/
+VirusTotal is a free service that analyzes suspicious files and URLs and facilitates the quick detection of viruses, worms, trojans, and all kinds of malware.  For more information about VirusTotal please visit https://www.virustotal.com/
 
 | ![image](https://cloud.githubusercontent.com/assets/306319/24308680/644b36b8-109f-11e7-929f-bbfb7a322622.png) | ![image](https://cloud.githubusercontent.com/assets/306319/24308814/de543ae0-109f-11e7-8498-f3d85d4bc093.png) |
 |---|---|
