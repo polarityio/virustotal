@@ -6,7 +6,7 @@ VirusTotal is a free service that analyzes suspicious files and URLs and facilit
 
 | ![image](https://cloud.githubusercontent.com/assets/306319/24308680/644b36b8-109f-11e7-929f-bbfb7a322622.png) | ![image](https://cloud.githubusercontent.com/assets/306319/24308814/de543ae0-109f-11e7-8498-f3d85d4bc093.png) |
 |---|---|
-|*VirusTotal Lookup of an MD5 Hash* | VirusTotal Lookup of an IPv4 Address |
+|*VirusTotal Lookup of an MD5 Hash* | *VirusTotal Lookup of an IPv4 Address* |
 
 > Note that the VirusTotal platform throttles lookups that make use of free public API keys to approximately four lookups a minute.
 
