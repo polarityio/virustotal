@@ -17,13 +17,6 @@ const IP_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/ip-address/report";
  * @param cb
  */
 function doLookup(entities, options, cb){
-    //
-    // Logger.info("LOGGING FROM VIRUSTOTAL");
-    // Logger.warn("Warning from VT");
-    // Logger.error("ERror from VT");
-    // Logger.debug("Debug from VT");
-    // Logger.trace("Trace from VT");
-
     if(typeof cb !== 'function'){
         return;
     }
@@ -33,18 +26,31 @@ function doLookup(entities, options, cb){
         return;
     }
 
-    let hashes = new Array();
     let ipv4Entities = new Array();
     let entityLookup = {};
+    let hashGroups = [];
+    let hashGroup = [];
+
+    Logger.trace(entities);
 
     entities.forEach(function(entity){
         if((entity.isMD5 || entity.isSHA1 || entity.isSHA256) && options.lookupFiles){
-            hashes.push(entity.value);
+            // VT can only look up 4 hashes at a time so we need to split up hashes into groups of 4
+            if(hashGroup.length >= 4){
+                hashGroups.push(hashGroup);
+                hashGroup = [];
+            }
+            hashGroup.push(entity.value);
             entityLookup[entity.value.toLowerCase()] = entity;
         }else if(entity.isIPv4 && !entity.isPrivateIP && options.lookupIps){
             ipv4Entities.push(entity);
         }
     });
+
+    // grab any "trailing" hashes
+    if(hashGroup.length > 0){
+        hashGroups.push(hashGroup);
+    }
 
     async.parallel({
         ipLookups: function(callback){
@@ -63,8 +69,28 @@ function doLookup(entities, options, cb){
             }
         },
         hashLookups: function(callback){
-            if(hashes.length > 0){
-                _lookupHash(hashes, entityLookup, options, callback);
+            Logger.debug({hashGroups:hashGroups}, 'hashGroups');
+            if(hashGroups.length > 0){
+                async.map(hashGroups, function(hashGroup, mapDone){
+                    _lookupHash(hashGroup, entityLookup, options, mapDone);
+                }, function(err, results){
+                    Logger.debug({hashLookupResults:results}, 'HashLookup Results');
+
+                    if(err){
+                        callback(err);
+                        return;
+                    }
+
+                    //results is an array of hashGroup results (i.e., an array of arrays)
+                    let unrolledResults = [];
+                    results.forEach(function(hashGroup){
+                        hashGroup.forEach(function(hashResult){
+                            unrolledResults.push(hashResult);
+                        });
+                    });
+
+                    callback(null, unrolledResults);
+                })
             }else{
                 callback(null, []);
             }
@@ -142,6 +168,7 @@ function _lookupHash(hashesArray, entityLookup, options, done){
     }, function (err, response, body) {
         _handleRequestError(err, response, body, options, function(err, body){
             if(err){
+                Logger.error({err:err}, 'Error Looking up Hash');
                 done(err);
                 return;
             }
@@ -201,6 +228,7 @@ function _lookupIp(ipEntity, options, done){
     }, function (err, response, body) {
         _handleRequestError(err, response, body, options, function(err, result){
             if(err){
+                Logger.error({err:err}, 'Error Looking up IP');
                 done(err);
                 return;
             }
@@ -308,7 +336,6 @@ function _computeIpDetails(result){
     keys.forEach(function(key){
         if(Array.isArray(result[keyMappings[key]])) {
             result[keyMappings[key]].forEach(function (row) {
-                Logger.info(row);
                 computedResults.overallPositives += row.positives;
                 computedResults.overallTotal += row.total;
                 computedResults[key + 'Positive'] += row.positives;
@@ -329,8 +356,6 @@ function _computeIpDetails(result){
 
     computedResults.overallPercent = computedResults.overallTotal === 0 ? 'NA' :
         ((computedResults.overallPositives / computedResults.overallTotal) * 100).toFixed(0) + '%';
-
-    //Logger.info(computedResults);
 
     return computedResults;
 }
