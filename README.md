@@ -8,13 +8,13 @@ VirusTotal is a free service that analyzes suspicious files and URLs and facilit
 |---|---|
 |*VirusTotal Lookup of an MD5 Hash* | *VirusTotal Lookup of an IPv4 Address* |
 
-> Note that the VirusTotal platform throttles lookups that make use of free public API keys to approximately four lookups a minute.
-
 ## VirusTotal Integration Options
 
 ### VirusTotal API Key
 
 Your VirusTotal API Key (free or commercial)
+
+> Note that the VirusTotal platform throttles lookups that make use of free public API keys to approximately four lookups a minute.
 
 ### Lookup IP Addresses
 
