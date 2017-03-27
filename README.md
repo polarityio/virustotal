@@ -30,7 +30,7 @@ If checked, the VirusTotal integration will display warnings in the notification
 
 ## Installation Instructions
 
-Installation instructions for integrations are provided the [PolarityIO GitHub Page](https://polarityio.github.io/).
+Installation instructions for integrations are provided on the [PolarityIO GitHub Page](https://polarityio.github.io/).
 
 ## Polarity
 
