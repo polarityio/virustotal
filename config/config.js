@@ -23,6 +23,7 @@ module.exports = {
      * @optional
      */
     description: "VirusTotal Integration for File and IP Address Reports",
+    entityTypes: ['ipv4', 'hash'],
     /**
      * An array of style files (css or less) that will be included for your integration. Any styles specified in
      * the below files can be used in your custom template.
@@ -58,7 +59,7 @@ module.exports = {
         // the directory you specify is writable by the `polarityd:polarityd` user and group.
 
         //directoryPath: '/var/log/polarity-integrations',
-        level: 'info',  //trace, debug, info, warn, error, fatal
+        level: 'trace',  //trace, debug, info, warn, error, fatal
         //fileName: 'virustotal.log'
     },
     /**
