@@ -59,7 +59,10 @@ module.exports = {
         // the directory you specify is writable by the `polarityd:polarityd` user and group.
 
         //directoryPath: '/var/log/polarity-integrations',
-        level: 'trace',  //trace, debug, info, warn, error, fatal
+        level: 'info',  //trace, debug, info, warn, error, fatal
+        // Special flag to log per hour unique hash and ip counts to the log file
+        // Counts are reset every 24 hours
+        logUniqueEntityCount: false
         //fileName: 'virustotal.log'
     },
     /**
