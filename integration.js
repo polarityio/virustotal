@@ -32,11 +32,12 @@ function doLookup(entities, options, cb){
     let hashGroup = [];
 
     Logger.trace(entities);
+    const MAX_HASHES_PER_GROUP = options.isPrivateApi === true ? 25 : 4;
 
     entities.forEach(function(entity){
         if((entity.isMD5 || entity.isSHA1 || entity.isSHA256) && options.lookupFiles){
             // VT can only look up 4 hashes at a time so we need to split up hashes into groups of 4
-            if(hashGroup.length >= 4){
+            if(hashGroup.length >= MAX_HASHES_PER_GROUP){
                 hashGroups.push(hashGroup);
                 hashGroup = [];
             }

@@ -153,6 +153,15 @@ module.exports = {
             "type": "boolean",
             "userCanEdit": true,
             "adminOnly": false
+        },
+        {
+            "key": "isPrivateApi",
+            "name": "Is Private API",
+            "description": "If true, the integration will treat your key as a paid private API key which allows for more efficient hash lookups",
+            "default": false,
+            "type": "boolean",
+            "userCanEdit": true,
+            "adminOnly": false
         }
     ]
 };
