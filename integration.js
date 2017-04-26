@@ -4,8 +4,15 @@ let request = require('request');
 let _ = require('lodash');
 let util = require('util');
 let net = require('net');
+let config = require('./config/config');
 let async = require('async');
 let Logger;
+let doLookupLogging;
+let debugHashSet;
+let debugIpSet;
+let logDebugHashSetCountHour;
+let logDebugHashSetCountDay;
+
 
 const HASH_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/file/report";
 const IP_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/ip-address/report";
@@ -32,17 +39,27 @@ function doLookup(entities, options, cb){
     let hashGroup = [];
 
     Logger.trace(entities);
+    const MAX_HASHES_PER_GROUP = options.isPrivateApi === true ? 25 : 4;
 
     entities.forEach(function(entity){
         if((entity.isMD5 || entity.isSHA1 || entity.isSHA256) && options.lookupFiles){
-            // VT can only look up 4 hashes at a time so we need to split up hashes into groups of 4
-            if(hashGroup.length >= 4){
+            // VT can only look up 4 or 25 hashes at a time dependeing on the key type
+            // so we need to split up hashes into groups of 4 or 25
+            if(hashGroup.length >= MAX_HASHES_PER_GROUP){
                 hashGroups.push(hashGroup);
                 hashGroup = [];
             }
             hashGroup.push(entity.value);
             entityLookup[entity.value.toLowerCase()] = entity;
+
+            if(doLookupLogging === true){
+                debugHashSet.add(entity.value);
+            }
+
         }else if(entity.isIPv4 && !entity.isPrivateIP && options.lookupIps){
+            if(doLookupLogging === true){
+                debugIpSet.add(entity.value);
+            }
             ipv4Entities.push(entity);
         }
     });
@@ -195,8 +212,6 @@ function _processHashLookupItem(virusTotalResultItem, entityLookupHash, hashLook
         virusTotalResultItem.type = 'file';
         hashLookupResults.push({
             entity: entity,
-            isVolatile: false,
-            displayValue: entity.value,
             data:{
                 summary: [util.format("%d <i class='fa fa-bug integration-text-bold-color'></i> / %d",
                     virusTotalResultItem.positives, virusTotalResultItem.total)],
@@ -206,8 +221,6 @@ function _processHashLookupItem(virusTotalResultItem, entityLookupHash, hashLook
     }else if(virusTotalResultItem.response_code === 0){
         hashLookupResults.push({
             entity: entity,
-            isVolatile: false,
-            displayValue: entity.value,
             data: null
         })
     }
@@ -279,8 +292,6 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults){
 
         ipLookupResults.push({
             entity: ipEntity,
-            isVolatile: false,
-            displayValue: ipEntity.value,
             data:{
                 summary: [
                     util.format("%d <i class='bts bt-globe integration-text-bold-color'></i>", details.numResolutions),
@@ -293,8 +304,6 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults){
         // This was an empty result so we just push a null data value
         ipLookupResults.push({
             entity: ipEntity,
-            isVolatile: false,
-            displayValue: ipEntity.value,
             data: null
         })
     }
@@ -401,6 +410,52 @@ function _createJsonErrorObject(msg, pointer, httpCode, code, title, meta) {
 
 function startup(logger){
     Logger = logger;
+    // If the logging level is less than 20 (debug or trace) then we will
+    // enable lookupLogging which will print out the number of unique lookups every
+    // hour
+    if(config.logging.logUniqueEntityCount === true){
+        Logger.info({loggerLevel: Logger._level}, "Will do Lookup Logging");
+        doLookupLogging = true;
+    }else{
+        doLookupLogging = false;
+        Logger.info({loggerLevel: Logger._level}, "Will not do Lookup Logging");
+    }
+
+    if(doLookupLogging === true){
+        // Every hour log the hash count (min * seconds * milliseconds)
+        debugHashSet = new Set();
+        debugIpSet = new Set();
+        logDebugHashSetCountHour = 0;
+        logDebugHashSetCountDay = 0;
+        setInterval(_logUniqueEntityCount, 60 * 60 * 1000);
+    }
+}
+
+function _logUniqueEntityCount(){
+    if(Logger._level <= 20){
+        Logger.debug({
+            hashCount: debugHashSet.size,
+            ipCount: debugIpSet.size,
+            day: logDebugHashSetCountDay,
+            hour: logDebugHashSetCountHour
+        }, 'Unique Entity Hash Count');
+    }else{
+        Logger.info({
+            hashCount: debugHashSet.size,
+            ipCount: debugIpSet.size,
+            day: logDebugHashSetCountDay,
+            hour: logDebugHashSetCountHour
+        }, 'Unique Entity Hash Count');
+    }
+
+    if(logDebugHashSetCountHour == 23){
+        debugHashSet.clear();
+        debugIpSet.clear();
+        logDebugHashSetCountHour = 0;
+        logDebugHashSetCountDay++;
+    }else{
+        logDebugHashSetCountHour++;
+    }
 }
 
 function validateOptions(userOptions, cb) {

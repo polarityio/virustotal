@@ -59,7 +59,10 @@ module.exports = {
         // the directory you specify is writable by the `polarityd:polarityd` user and group.
 
         //directoryPath: '/var/log/polarity-integrations',
-        level: 'trace',  //trace, debug, info, warn, error, fatal
+        level: 'info',  //trace, debug, info, warn, error, fatal
+        // Special flag to log per hour unique hash and ip counts to the log file
+        // Counts are reset every 24 hours
+        logUniqueEntityCount: false
         //fileName: 'virustotal.log'
     },
     /**
@@ -149,6 +152,15 @@ module.exports = {
             "name": "API Key Limit Reached Warning",
             "description": "Displays a Warning in the Notification Window if you have reached your" +
             " VirusTotal API key lookup limit",
+            "default": false,
+            "type": "boolean",
+            "userCanEdit": true,
+            "adminOnly": false
+        },
+        {
+            "key": "isPrivateApi",
+            "name": "Is Private API",
+            "description": "If true, the integration will treat your key as a paid private API key which allows for more efficient hash lookups",
             "default": false,
             "type": "boolean",
             "userCanEdit": true,
