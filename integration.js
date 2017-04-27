@@ -455,6 +455,8 @@ function _logLookupStats() {
         debugLookupStats.hourCount = 0;
         debugLookupStats.hashCount = 0;
         debugLookupStats.ipCount = 0;
+        debugLookupStats.ipLookups = 0;
+        debugLookupStats.hashLookups = 0;
         debugLookupStats.dayCount++;
     } else {
         debugLookupStats.hourCount++;
