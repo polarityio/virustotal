@@ -430,22 +430,20 @@ function _createJsonErrorObject(msg, pointer, httpCode, code, title, meta) {
 function startup(logger) {
     Logger = logger;
 
-    // If the logging level is less than 20 (debug or trace) then we will
-    // enable lookupLogging which will print out the number of unique lookups every
-    // hour
-    if (config && config.logging && config.logging.logUniqueEntityCount === true) {
+    if (config && config.logging && config.logging.logLookupStats === true) {
         Logger.info({loggerLevel: Logger._level}, "Will do Lookup Logging");
         doLookupLogging = true;
         lookupHashSet = new Set();
         lookupIpSet = new Set();
-        setInterval(_logUniqueEntityCount, 60 * 60 * 1000);
+        // Print log every hour
+        setInterval(_logLookupStats, 60 * 60 * 1000);
     } else {
         doLookupLogging = false;
         Logger.info({loggerLevel: Logger._level}, "Will not do Lookup Logging");
     }
 }
 
-function _logUniqueEntityCount() {
+function _logLookupStats() {
     debugLookupStats.ipCount = lookupIpSet.size;
     debugLookupStats.hashCount = lookupHashSet.size;
 
