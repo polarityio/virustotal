@@ -62,7 +62,7 @@ module.exports = {
         level: 'info',  //trace, debug, info, warn, error, fatal
         // Special flag to log per hour unique hash and ip counts to the log file
         // Counts are reset every 24 hours
-        logUniqueEntityCount: false
+        logLookupStats: false
         //fileName: 'virustotal.log'
     },
     /**
