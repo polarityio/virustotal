@@ -50,6 +50,14 @@ module.exports = {
             file: "./templates/virustotal.hbs"
         }
     },
+    settings:{
+        /**
+         * This is an experimental feature designed to reduce the number of lookups made to VirusTotal.  It works
+         * by tracking pending lookups and then queuing additional lookups on an indicator until after
+         * any pending lookups are returned.
+         */
+        trackPendingLookups: true
+    },
     logging: {
         // directory is relative to the this integrations directory
         // e.g., if the integration is in /app/polarity-server/integrations/virustotal
@@ -62,7 +70,7 @@ module.exports = {
         level: 'info',  //trace, debug, info, warn, error, fatal
         // Special flag to log per hour unique hash and ip counts to the log file
         // Counts are reset every 24 hours
-        logLookupStats: false
+        logLookupStats: true
         //fileName: 'virustotal.log'
     },
     /**
