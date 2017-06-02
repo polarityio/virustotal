@@ -55,8 +55,10 @@ module.exports = {
          * This is an experimental feature designed to reduce the number of lookups made to VirusTotal.  It works
          * by tracking pending lookups and then queuing additional lookups on an indicator until after
          * any pending lookups are returned.
+         *
+         * Important: You must be running Polarity-Server >= 2.5.0 if you want to set this value to true
          */
-        trackPendingLookups: true
+        trackPendingLookups: false
     },
     logging: {
         // directory is relative to the this integrations directory
