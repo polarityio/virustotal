@@ -6,7 +6,10 @@ let util = require('util');
 let net = require('net');
 let config = require('./config/config');
 let async = require('async');
+let PendingLookupCache = require('./lib/pending-lookup-cache');
+
 let Logger;
+let pendingLookupCache;
 
 let doLookupLogging;
 let lookupHashSet;
@@ -49,24 +52,34 @@ function doLookup(entities, options, cb) {
     const MAX_HASHES_PER_GROUP = options.isPrivateApi === true ? 25 : 4;
 
     entities.forEach(function (entity) {
+        if(pendingLookupCache.isRunning(entity.value)){
+            pendingLookupCache.addPendingLookup(entity.value, cb);
+            return;
+        }
+
         if ((entity.isMD5 || entity.isSHA1 || entity.isSHA256) && options.lookupFiles) {
-            // VT can only look up 4 or 25 hashes at a time dependeing on the key type
+            // VT can only look up 4 or 25 hashes at a time depending on the key type
             // so we need to split up hashes into groups of 4 or 25
             if (hashGroup.length >= MAX_HASHES_PER_GROUP) {
                 hashGroups.push(hashGroup);
                 hashGroup = [];
             }
+
             hashGroup.push(entity.value);
             entityLookup[entity.value.toLowerCase()] = entity;
+
+            pendingLookupCache.addRunningLookup(entity.value);
 
             if (doLookupLogging === true) {
                 lookupHashSet.add(entity.value);
             }
-
         } else if (entity.isIPv4 && !entity.isPrivateIP && options.lookupIps) {
             if (doLookupLogging === true) {
                 lookupIpSet.add(entity.value);
             }
+
+            pendingLookupCache.addRunningLookup(entity.value);
+
             ipv4Entities.push(entity);
         }
     });
@@ -122,22 +135,30 @@ function doLookup(entities, options, cb) {
         }
     }, function (err, lookupResults) {
         if (err) {
+            pendingLookupCache.reset();
             cb(err);
             return;
         }
 
         let combinedResults = new Array();
         lookupResults.hashLookups.forEach(function (lookupResult) {
+            pendingLookupCache.removeRunningLookup(lookupResult.entity.value);
+            pendingLookupCache.executePendingLookups(lookupResult);
             combinedResults.push(lookupResult);
         });
 
         lookupResults.ipLookups.forEach(function (lookupResult) {
+            pendingLookupCache.removeRunningLookup(lookupResult.entity.value);
+            pendingLookupCache.executePendingLookups(lookupResult);
             combinedResults.push(lookupResult)
         });
 
+        pendingLookupCache.logStats();
         cb(null, combinedResults);
     });
 }
+
+
 
 function _handleRequestError(err, response, body, options, cb) {
     if (err) {
@@ -440,6 +461,11 @@ function startup(logger) {
     } else {
         doLookupLogging = false;
         Logger.info({loggerLevel: Logger._level}, "Will not do Lookup Logging");
+    }
+
+    pendingLookupCache = new PendingLookupCache(logger);
+    if(config && config.settings && config.settings.trackPendingLookups){
+        pendingLookupCache.setEnabled(true);
     }
 }
 
