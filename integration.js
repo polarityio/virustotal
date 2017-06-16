@@ -501,8 +501,8 @@ function startup(logger) {
     }
 
     if(typeof config.request.proxy === 'string' && config.request.proxy.length > 0){
-        requestOptionsIp.proxy = fs.readFileSync(config.request.proxy);
-        requestOptionsHash.proxy = fs.readFileSync(config.request.proxy);
+        requestOptionsIp.proxy = config.request.proxy;
+        requestOptionsHash.proxy = config.request.proxy;
     }
 }
 
