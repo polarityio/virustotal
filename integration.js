@@ -174,7 +174,9 @@ function doLookup(entities, options, cb) {
 function _handleRequestError(err, response, body, options, cb) {
     if (err) {
         cb(_createJsonErrorPayload("Unable to connect to VirusTotal server", null, '500', '2A', 'VirusTotal HTTP Request Failed', {
-            err: err
+            err: err,
+            response: response,
+            body: body
         }));
         return;
     }
@@ -201,7 +203,10 @@ function _handleRequestError(err, response, body, options, cb) {
         if (body) {
             cb(body);
         } else {
-            cb(response.statusMessage);
+            cb(_createJsonErrorPayload(response.statusMessage, null, response.statusCode, '2A', 'VirusTotal HTTP Request Failed', {
+                response: response,
+                body: body
+            }));
         }
         return;
     }
@@ -491,8 +496,8 @@ function startup(logger) {
     }
 
     if(typeof config.request.passphrase === 'string' && config.request.passphrase.length > 0){
-        requestOptionsIp.passphrase = fs.readFileSync(config.request.passphrase);
-        requestOptionsHash.passphrase = fs.readFileSync(config.request.passphrase);
+        requestOptionsIp.passphrase = config.request.passphrase;
+        requestOptionsHash.passphrase = config.request.passphrase;
     }
 
     if(typeof config.request.ca === 'string' && config.request.ca.length > 0){
