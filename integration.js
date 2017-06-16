@@ -23,6 +23,12 @@ const debugLookupStats = {
     hashLookups: 0
 };
 
+const IGNORED_IPS = new Set([
+    '127.0.0.1',
+    '255.255.255.255',
+    '0.0.0.0'
+]);
+
 
 const HASH_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/file/report";
 const IP_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/ip-address/report";
@@ -73,7 +79,7 @@ function doLookup(entities, options, cb) {
             if (doLookupLogging === true) {
                 lookupHashSet.add(entity.value);
             }
-        } else if (entity.isIPv4 && !entity.isPrivateIP && options.lookupIps) {
+        } else if (entity.isIPv4 && !entity.isPrivateIP && !IGNORED_IPS.has(entity.value) && options.lookupIps) {
             if (doLookupLogging === true) {
                 lookupIpSet.add(entity.value);
             }
