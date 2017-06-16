@@ -164,7 +164,10 @@ function doLookup(entities, options, cb) {
             combinedResults.push(lookupResult)
         });
 
+
         pendingLookupCache.logStats();
+
+
         cb(null, combinedResults);
     });
 }
@@ -231,6 +234,8 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
     };
     requestOptionsHash.json = true;
 
+    //Logger.debug({requestOptionsHash: requestOptionsHash}, 'Request Options for Hash Lookup');
+
     request(requestOptionsHash, function (err, response, body) {
         _handleRequestError(err, response, body, options, function (err, body) {
             if (err) {
@@ -293,6 +298,8 @@ function _lookupIp(ipEntity, options, done) {
         "ip": ipEntity.value
     };
     requestOptionsIp.json = true;
+
+    //Logger.debug({requestOptionsIp:requestOptionsIp}, 'Options for IP Lookup');
 
     request(requestOptionsIp, function (err, response, body) {
         _handleRequestError(err, response, body, options, function (err, result) {
@@ -509,6 +516,9 @@ function startup(logger) {
         requestOptionsIp.proxy = config.request.proxy;
         requestOptionsHash.proxy = config.request.proxy;
     }
+
+    // Logger.info({requestOptionsIp: requestOptionsIp}, 'requestOptionsIp after load');
+    // Logger.info({requestOptionsHash: requestOptionsHash}, 'requestOptionsHash after load');
 }
 
 function _logLookupStats() {
