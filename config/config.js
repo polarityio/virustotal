@@ -50,8 +50,23 @@ module.exports = {
             file: "./templates/virustotal.hbs"
         }
     },
+    request: {
+        // Provide the path to your certFile. Leave an empty string to ignore this option.
+        cert: '',
+        // Provide the path to your private key. Leave an empty string to ignore this option.
+        key: '',
+        // Provide the key passphrase if required.  Leave an empty string to ignore this option.
+        passphrase: '',
+        // Provide the Certificate Authority. Leave an empty string to ignore this option.
+        ca: '',
+        // An HTTP proxy to be used. Supports proxy Auth with Basic Auth, identical to support for
+        // the url parameter (by embedding the auth info in the uri)
+        proxy: ''
+    },
     settings:{
         /**
+         * Note: This feature is not yet implemented.  Please leave this flag set to false.
+         *
          * This is an experimental feature designed to reduce the number of lookups made to VirusTotal.  It works
          * by tracking pending lookups and then queuing additional lookups on an indicator until after
          * any pending lookups are returned.

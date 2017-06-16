@@ -7,6 +7,7 @@ let net = require('net');
 let config = require('./config/config');
 let async = require('async');
 let PendingLookupCache = require('./lib/pending-lookup-cache');
+let fs = require('fs');
 
 let Logger;
 let pendingLookupCache;
@@ -14,6 +15,10 @@ let pendingLookupCache;
 let doLookupLogging;
 let lookupHashSet;
 let lookupIpSet;
+
+let requestOptionsIp = {};
+let requestOptionsHash = {};
+
 const debugLookupStats = {
     hourCount: 0,
     dayCount: 0,
@@ -210,18 +215,18 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
     }
 
     //do the lookup
-    request({
-        uri: HASH_LOOKUP_URI,
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-encoded'
-        },
-        form: {
-            "apikey": options.apiKey,
-            "resource": hashesArray.join(', ')
-        },
-        json: true
-    }, function (err, response, body) {
+    requestOptionsHash.uri = HASH_LOOKUP_URI;
+    requestOptionsHash.method = 'POST';
+    requestOptionsHash.headers = {
+        'Content-Type': 'application/x-www-form-encoded'
+    };
+    requestOptionsHash.form = {
+        "apikey": options.apiKey,
+        "resource": hashesArray.join(', ')
+    };
+    requestOptionsHash.json = true;
+
+    request(requestOptionsHash, function (err, response, body) {
         _handleRequestError(err, response, body, options, function (err, body) {
             if (err) {
                 Logger.error({err: err}, 'Error Looking up Hash');
@@ -275,15 +280,16 @@ function _lookupIp(ipEntity, options, done) {
         debugLookupStats.ipLookups++;
     }
 
-    request({
-        uri: IP_LOOKUP_URI,
-        method: 'GET',
-        qs: {
-            "apikey": options.apiKey,
-            "ip": ipEntity.value
-        },
-        json: true
-    }, function (err, response, body) {
+    //do the lookup
+    requestOptionsIp.uri = IP_LOOKUP_URI;
+    requestOptionsIp.method = 'GET';
+    requestOptionsIp.qs = {
+        "apikey": options.apiKey,
+        "ip": ipEntity.value
+    };
+    requestOptionsIp.json = true;
+
+    request(requestOptionsIp, function (err, response, body) {
         _handleRequestError(err, response, body, options, function (err, result) {
             if (err) {
                 Logger.error({err: err}, 'Error Looking up IP');
@@ -472,6 +478,31 @@ function startup(logger) {
     pendingLookupCache = new PendingLookupCache(logger);
     if(config && config.settings && config.settings.trackPendingLookups){
         pendingLookupCache.setEnabled(true);
+    }
+
+    if(typeof config.request.cert === 'string' && config.request.cert.length > 0){
+        requestOptionsIp.cert = fs.readFileSync(config.request.cert);
+        requestOptionsHash.cert = fs.readFileSync(config.request.cert);
+    }
+
+    if(typeof config.request.key === 'string' && config.request.key.length > 0){
+        requestOptionsIp.key = fs.readFileSync(config.request.key);
+        requestOptionsHash.key = fs.readFileSync(config.request.key);
+    }
+
+    if(typeof config.request.passphrase === 'string' && config.request.passphrase.length > 0){
+        requestOptionsIp.passphrase = fs.readFileSync(config.request.passphrase);
+        requestOptionsHash.passphrase = fs.readFileSync(config.request.passphrase);
+    }
+
+    if(typeof config.request.ca === 'string' && config.request.ca.length > 0){
+        requestOptionsIp.ca = fs.readFileSync(config.request.ca);
+        requestOptionsHash.ca = fs.readFileSync(config.request.ca);
+    }
+
+    if(typeof config.request.proxy === 'string' && config.request.proxy.length > 0){
+        requestOptionsIp.proxy = fs.readFileSync(config.request.proxy);
+        requestOptionsHash.proxy = fs.readFileSync(config.request.proxy);
     }
 }
 
