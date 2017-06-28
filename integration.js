@@ -34,7 +34,6 @@ const IGNORED_IPS = new Set([
     '0.0.0.0'
 ]);
 
-
 const HASH_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/file/report";
 const IP_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/ip-address/report";
 
@@ -262,9 +261,11 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
 function _processHashLookupItem(virusTotalResultItem, entityLookupHash, hashLookupResults) {
     let entity = entityLookupHash[virusTotalResultItem.resource.toLowerCase()];
 
-    if (virusTotalResultItem.response_code === 1) {
+    if (virusTotalResultItem.response_code === 1 &&
+        (virusTotalResultItem.positives === 0 && virusTotalResultItem.total === 0)) {
         virusTotalResultItem.type = 'file';
         Logger.debug({hash: entity.value}, 'Had Result');
+
         hashLookupResults.push({
             entity: entity,
             data: {
@@ -273,7 +274,8 @@ function _processHashLookupItem(virusTotalResultItem, entityLookupHash, hashLook
                 details: virusTotalResultItem
             }
         });
-    } else if (virusTotalResultItem.response_code === 0) {
+    } else if (virusTotalResultItem.response_code === 0 ||
+        (virusTotalResultItem.positives === 0 && virusTotalResultItem.total === 0)) {
         Logger.debug({hash: entity.value}, 'No Result');
         hashLookupResults.push({
             entity: entity,
@@ -352,17 +354,27 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults) {
     if (virusTotalResultItem.response_code === 1) {
         // Compute the details
         let details = _computeIpDetails(virusTotalResultItem);
-        Logger.debug({ip: ipEntity.value}, 'Had Result');
-        ipLookupResults.push({
-            entity: ipEntity,
-            data: {
-                summary: [
-                    util.format("%d <i class='bts bt-globe integration-text-bold-color'></i>", details.numResolutions),
-                    util.format("%d <i class='fa fa-bug integration-text-bold-color'></i> / %d", details.overallPositives, details.overallTotal)
-                ],
-                details: details
-            }
-        });
+
+        if(details.numResolutions === 0 && details.overallPositives === 0 && details.overallTotal === 0){
+            Logger.debug({ip: ipEntity.value}, 'No Positive Detections or Resolutions');
+            // This was an empty result so we just push a null data value
+            ipLookupResults.push({
+                entity: ipEntity,
+                data: null
+            })
+        }else{
+            Logger.debug({ip: ipEntity.value}, 'Had Result');
+            ipLookupResults.push({
+                entity: ipEntity,
+                data: {
+                    summary: [
+                        util.format("%d <i class='bts bt-globe integration-text-bold-color'></i>", details.numResolutions),
+                        util.format("%d <i class='fa fa-bug integration-text-bold-color'></i> / %d", details.overallPositives, details.overallTotal)
+                    ],
+                    details: details
+                }
+            });
+        }
     } else if (virusTotalResultItem.response_code === 0) {
         Logger.debug({ip: ipEntity.value}, 'No Result');
         // This was an empty result so we just push a null data value
