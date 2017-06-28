@@ -261,7 +261,7 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
 function _processHashLookupItem(virusTotalResultItem, entityLookupHash, hashLookupResults) {
     let entity = entityLookupHash[virusTotalResultItem.resource.toLowerCase()];
 
-    if (virusTotalResultItem.response_code === 1 &&
+    if (virusTotalResultItem.response_code === 1 ||
         (virusTotalResultItem.positives === 0 && virusTotalResultItem.total === 0)) {
         virusTotalResultItem.type = 'file';
         Logger.debug({hash: entity.value}, 'Had Result');
