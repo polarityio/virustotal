@@ -7,6 +7,7 @@ let net = require('net');
 let config = require('./config/config');
 let async = require('async');
 let PendingLookupCache = require('./lib/pending-lookup-cache');
+let fs = require('fs');
 
 let Logger;
 let pendingLookupCache;
@@ -14,6 +15,10 @@ let pendingLookupCache;
 let doLookupLogging;
 let lookupHashSet;
 let lookupIpSet;
+
+let requestOptionsIp = {};
+let requestOptionsHash = {};
+
 const debugLookupStats = {
     hourCount: 0,
     dayCount: 0,
@@ -22,6 +27,12 @@ const debugLookupStats = {
     ipLookups: 0,
     hashLookups: 0
 };
+
+const IGNORED_IPS = new Set([
+    '127.0.0.1',
+    '255.255.255.255',
+    '0.0.0.0'
+]);
 
 
 const HASH_LOOKUP_URI = "https://www.virustotal.com/vtapi/v2/file/report";
@@ -73,7 +84,7 @@ function doLookup(entities, options, cb) {
             if (doLookupLogging === true) {
                 lookupHashSet.add(entity.value);
             }
-        } else if (entity.isIPv4 && !entity.isPrivateIP && options.lookupIps) {
+        } else if (entity.isIPv4 && !entity.isPrivateIP && !IGNORED_IPS.has(entity.value) && options.lookupIps) {
             if (doLookupLogging === true) {
                 lookupIpSet.add(entity.value);
             }
@@ -153,7 +164,10 @@ function doLookup(entities, options, cb) {
             combinedResults.push(lookupResult)
         });
 
+
         pendingLookupCache.logStats();
+
+
         cb(null, combinedResults);
     });
 }
@@ -163,7 +177,9 @@ function doLookup(entities, options, cb) {
 function _handleRequestError(err, response, body, options, cb) {
     if (err) {
         cb(_createJsonErrorPayload("Unable to connect to VirusTotal server", null, '500', '2A', 'VirusTotal HTTP Request Failed', {
-            err: err
+            err: err,
+            response: response,
+            body: body
         }));
         return;
     }
@@ -190,7 +206,10 @@ function _handleRequestError(err, response, body, options, cb) {
         if (body) {
             cb(body);
         } else {
-            cb(response.statusMessage);
+            cb(_createJsonErrorPayload(response.statusMessage, null, response.statusCode, '2A', 'VirusTotal HTTP Request Failed', {
+                response: response,
+                body: body
+            }));
         }
         return;
     }
@@ -204,18 +223,20 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
     }
 
     //do the lookup
-    request({
-        uri: HASH_LOOKUP_URI,
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-encoded'
-        },
-        form: {
-            "apikey": options.apiKey,
-            "resource": hashesArray.join(', ')
-        },
-        json: true
-    }, function (err, response, body) {
+    requestOptionsHash.uri = HASH_LOOKUP_URI;
+    requestOptionsHash.method = 'POST';
+    requestOptionsHash.headers = {
+        'Content-Type': 'application/x-www-form-encoded'
+    };
+    requestOptionsHash.form = {
+        "apikey": options.apiKey,
+        "resource": hashesArray.join(', ')
+    };
+    requestOptionsHash.json = true;
+
+    //Logger.debug({requestOptionsHash: requestOptionsHash}, 'Request Options for Hash Lookup');
+
+    request(requestOptionsHash, function (err, response, body) {
         _handleRequestError(err, response, body, options, function (err, body) {
             if (err) {
                 Logger.error({err: err}, 'Error Looking up Hash');
@@ -269,15 +290,18 @@ function _lookupIp(ipEntity, options, done) {
         debugLookupStats.ipLookups++;
     }
 
-    request({
-        uri: IP_LOOKUP_URI,
-        method: 'GET',
-        qs: {
-            "apikey": options.apiKey,
-            "ip": ipEntity.value
-        },
-        json: true
-    }, function (err, response, body) {
+    //do the lookup
+    requestOptionsIp.uri = IP_LOOKUP_URI;
+    requestOptionsIp.method = 'GET';
+    requestOptionsIp.qs = {
+        "apikey": options.apiKey,
+        "ip": ipEntity.value
+    };
+    requestOptionsIp.json = true;
+
+    //Logger.debug({requestOptionsIp:requestOptionsIp}, 'Options for IP Lookup');
+
+    request(requestOptionsIp, function (err, response, body) {
         _handleRequestError(err, response, body, options, function (err, result) {
             if (err) {
                 Logger.error({err: err}, 'Error Looking up IP');
@@ -467,6 +491,36 @@ function startup(logger) {
     if(config && config.settings && config.settings.trackPendingLookups){
         pendingLookupCache.setEnabled(true);
     }
+
+    if(typeof config.request.cert === 'string' && config.request.cert.length > 0){
+        requestOptionsIp.cert = fs.readFileSync(config.request.cert);
+        requestOptionsHash.cert = fs.readFileSync(config.request.cert);
+    }
+
+    if(typeof config.request.key === 'string' && config.request.key.length > 0){
+        requestOptionsIp.key = fs.readFileSync(config.request.key);
+        requestOptionsHash.key = fs.readFileSync(config.request.key);
+    }
+
+    if(typeof config.request.passphrase === 'string' && config.request.passphrase.length > 0){
+        requestOptionsIp.passphrase = config.request.passphrase;
+        requestOptionsHash.passphrase = config.request.passphrase;
+    }
+
+    if(typeof config.request.ca === 'string' && config.request.ca.length > 0){
+        requestOptionsIp.ca = fs.readFileSync(config.request.ca);
+        requestOptionsHash.ca = fs.readFileSync(config.request.ca);
+    }else if(Array.isArray(config.request.ca)){
+        requestOptionsIp
+    }
+
+    if(typeof config.request.proxy === 'string' && config.request.proxy.length > 0){
+        requestOptionsIp.proxy = config.request.proxy;
+        requestOptionsHash.proxy = config.request.proxy;
+    }
+
+    // Logger.info({requestOptionsIp: requestOptionsIp}, 'requestOptionsIp after load');
+    // Logger.info({requestOptionsHash: requestOptionsHash}, 'requestOptionsHash after load');
 }
 
 function _logLookupStats() {
