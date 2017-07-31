@@ -175,6 +175,15 @@ module.exports = {
             "adminOnly": false
         },
         {
+            "key": "showHashesWithNoDetections",
+            "name": "Show Files (Hashes) with No Detections",
+            "description": "If checked, the integration will show results for files that have no positive detections.",
+            "default": false,
+            "type": "boolean",
+            "userCanEdit": true,
+            "adminOnly": false
+        },
+        {
             "key": "warnOnLookupLimit",
             "name": "API Key Limit Reached Warning",
             "description": "Displays a Warning in the Notification Window if you have reached your" +

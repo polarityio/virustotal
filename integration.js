@@ -62,7 +62,7 @@ function doLookup(entities, options, cb) {
     const MAX_HASHES_PER_GROUP = options.isPrivateApi === true ? 25 : 4;
 
     entities.forEach(function (entity) {
-        if(pendingLookupCache.isRunning(entity.value)){
+        if (pendingLookupCache.isRunning(entity.value)) {
             pendingLookupCache.addPendingLookup(entity.value, cb);
             return;
         }
@@ -103,7 +103,7 @@ function doLookup(entities, options, cb) {
         ipLookups: function (callback) {
             if (ipv4Entities.length > 0) {
                 async.concat(ipv4Entities, function (ipEntity, concatDone) {
-                    Logger.debug({ip:ipEntity.value}, 'Looking up IP');
+                    Logger.debug({ip: ipEntity.value}, 'Looking up IP');
                     _lookupIp(ipEntity, options, concatDone);
                 }, function (err, results) {
                     if (err) {
@@ -122,12 +122,12 @@ function doLookup(entities, options, cb) {
                 async.map(hashGroups, function (hashGroup, mapDone) {
                     _lookupHash(hashGroup, entityLookup, options, mapDone);
                 }, function (err, results) {
-                    Logger.trace({hashLookupResults: results}, 'HashLookup Results');
-
                     if (err) {
                         callback(err);
                         return;
                     }
+
+                    Logger.trace({hashLookupResults: results}, 'HashLookup Results');
 
                     //results is an array of hashGroup results (i.e., an array of arrays)
                     let unrolledResults = [];
@@ -170,7 +170,6 @@ function doLookup(entities, options, cb) {
         cb(null, combinedResults);
     });
 }
-
 
 
 function _handleRequestError(err, response, body, options, cb) {
@@ -244,47 +243,92 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
             }
 
             let hashLookupResults = [];
+            let tmpResult;
 
             if (_.isArray(body)) {
-                _.each(body, function (item) {
-                    hashLookupResults = _processHashLookupItem(item, entityLookup, hashLookupResults);
+                body.forEach(item => {
+                    tmpResult = _processHashLookupItem(item, entityLookup, options.showHashesWithNoDetections);
+                    if (tmpResult !== null) {
+                        hashLookupResults.push(tmpResult);
+                    }
                 });
-                //send the results to the user
             } else {
-                hashLookupResults = _processHashLookupItem(body, entityLookup, hashLookupResults);
+                tmpResult = _processHashLookupItem(body, entityLookup, options.showHashesWithNoDetections);
+                if (tmpResult !== null) {
+                    hashLookupResults.push(tmpResult);
+                }
             }
+
             done(null, hashLookupResults);
         });
     });
 }
 
-function _processHashLookupItem(virusTotalResultItem, entityLookupHash, hashLookupResults) {
+function _processHashLookupItem(virusTotalResultItem, entityLookupHash, showHashesWithNoDetections) {
     let entity = entityLookupHash[virusTotalResultItem.resource.toLowerCase()];
 
-    if (virusTotalResultItem.response_code === 1 ||
-        (virusTotalResultItem.positives === 0 && virusTotalResultItem.total === 0)) {
-        virusTotalResultItem.type = 'file';
-        Logger.debug({hash: entity.value}, 'Had Result');
+    Logger.debug({
+        entityValue: entity.value,
+        positives: virusTotalResultItem.positives,
+        total: virusTotalResultItem.total,
+        responseCode: virusTotalResultItem.response_code
+    }, 'Result Item');
 
-        hashLookupResults.push({
+    if (_isHashLookupResultHit(virusTotalResultItem, showHashesWithNoDetections)) {
+        virusTotalResultItem.type = 'file';
+        Logger.debug({hash: entity.value}, 'Lookup Had Result (Caching Hit)');
+
+        return {
             entity: entity,
             data: {
                 summary: [util.format("%d <i class='fa fa-bug integration-text-bold-color'></i> / %d",
                     virusTotalResultItem.positives, virusTotalResultItem.total)],
                 details: virusTotalResultItem
             }
-        });
-    } else if (virusTotalResultItem.response_code === 0 ||
-        (virusTotalResultItem.positives === 0 && virusTotalResultItem.total === 0)) {
-        Logger.debug({hash: entity.value}, 'No Result');
-        hashLookupResults.push({
+        };
+    } else if (_isHashLookupMiss(virusTotalResultItem)) {
+        Logger.debug({hash: entity.value}, 'No Result (Caching Miss)');
+        return {
             entity: entity,
             data: null
-        })
+        };
     }
 
-    return hashLookupResults;
+    Logger.debug("Ignoring result due to no positive detections");
+    return null;
 }
+
+function _isHashLookupMiss(virusTotalResultItem) {
+    if (virusTotalResultItem.response_code === 0 ||
+        (virusTotalResultItem.positives === 0 && virusTotalResultItem.total === 0)) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * For there to be a hit the response_code must be 1.  In addition, if the total number of positive
+ * detections is 0 then no hit will be returned unless `showHashWithNoDetections` is set to true.
+ *
+ * @param virusTotalResultItem
+ * @param showHashesWithNoDetections
+ * @returns {boolean}
+ * @private
+ */
+function _isHashLookupResultHit(virusTotalResultItem, showHashesWithNoDetections) {
+    if (virusTotalResultItem.response_code === 1) {
+
+        if (virusTotalResultItem.positives === 0 && showHashesWithNoDetections === false) {
+            return false;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 
 function _lookupIp(ipEntity, options, done) {
     //do the lookup
@@ -355,14 +399,14 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults) {
         // Compute the details
         let details = _computeIpDetails(virusTotalResultItem);
 
-        if(details.numResolutions === 0 && details.overallPositives === 0 && details.overallTotal === 0){
+        if (details.numResolutions === 0 && details.overallPositives === 0 && details.overallTotal === 0) {
             Logger.debug({ip: ipEntity.value}, 'No Positive Detections or Resolutions');
             // This was an empty result so we just push a null data value
             ipLookupResults.push({
                 entity: ipEntity,
                 data: null
             })
-        }else{
+        } else {
             Logger.debug({ip: ipEntity.value}, 'Had Result');
             ipLookupResults.push({
                 entity: ipEntity,
@@ -500,33 +544,33 @@ function startup(logger) {
     }
 
     pendingLookupCache = new PendingLookupCache(logger);
-    if(config && config.settings && config.settings.trackPendingLookups){
+    if (config && config.settings && config.settings.trackPendingLookups) {
         pendingLookupCache.setEnabled(true);
     }
 
-    if(typeof config.request.cert === 'string' && config.request.cert.length > 0){
+    if (typeof config.request.cert === 'string' && config.request.cert.length > 0) {
         requestOptionsIp.cert = fs.readFileSync(config.request.cert);
         requestOptionsHash.cert = fs.readFileSync(config.request.cert);
     }
 
-    if(typeof config.request.key === 'string' && config.request.key.length > 0){
+    if (typeof config.request.key === 'string' && config.request.key.length > 0) {
         requestOptionsIp.key = fs.readFileSync(config.request.key);
         requestOptionsHash.key = fs.readFileSync(config.request.key);
     }
 
-    if(typeof config.request.passphrase === 'string' && config.request.passphrase.length > 0){
+    if (typeof config.request.passphrase === 'string' && config.request.passphrase.length > 0) {
         requestOptionsIp.passphrase = config.request.passphrase;
         requestOptionsHash.passphrase = config.request.passphrase;
     }
 
-    if(typeof config.request.ca === 'string' && config.request.ca.length > 0){
+    if (typeof config.request.ca === 'string' && config.request.ca.length > 0) {
         requestOptionsIp.ca = fs.readFileSync(config.request.ca);
         requestOptionsHash.ca = fs.readFileSync(config.request.ca);
-    }else if(Array.isArray(config.request.ca)){
+    } else if (Array.isArray(config.request.ca)) {
         requestOptionsIp
     }
 
-    if(typeof config.request.proxy === 'string' && config.request.proxy.length > 0){
+    if (typeof config.request.proxy === 'string' && config.request.proxy.length > 0) {
         requestOptionsIp.proxy = config.request.proxy;
         requestOptionsHash.proxy = config.request.proxy;
     }
