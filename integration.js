@@ -566,9 +566,7 @@ function startup(logger) {
     if (typeof config.request.ca === 'string' && config.request.ca.length > 0) {
         requestOptionsIp.ca = fs.readFileSync(config.request.ca);
         requestOptionsHash.ca = fs.readFileSync(config.request.ca);
-    } else if (Array.isArray(config.request.ca)) {
-        requestOptionsIp
-    }
+    } 
 
     if (typeof config.request.proxy === 'string' && config.request.proxy.length > 0) {
         requestOptionsIp.proxy = config.request.proxy;
