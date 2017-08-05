@@ -75,13 +75,15 @@ function doLookup(entities, options, cb) {
                 hashGroup = [];
             }
 
-            hashGroup.push(entity.value);
-            entityLookup[entity.value.toLowerCase()] = entity;
+            if(!entityLookup[entity.value.toLowerCase()]){
+                // entity isn't already added
+                hashGroup.push(entity.value);
+                entityLookup[entity.value.toLowerCase()] = entity;
+                pendingLookupCache.addRunningLookup(entity.value);
 
-            pendingLookupCache.addRunningLookup(entity.value);
-
-            if (doLookupLogging === true) {
-                lookupHashSet.add(entity.value);
+                if (doLookupLogging === true) {
+                    lookupHashSet.add(entity.value);
+                }
             }
         } else if (entity.isIPv4 && !entity.isPrivateIP && !IGNORED_IPS.has(entity.value) && options.lookupIps) {
             if (doLookupLogging === true) {
