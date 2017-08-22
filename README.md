@@ -24,9 +24,15 @@ If checked, the VirusTotal integration will send IPv4 addresses to VirusTotal fo
 
 If checked, the VirusTotal integration will send MD5, SHA1, and SHA256 hashes to VirusTotal for lookup.
 
+### Show Files (Hashes) with No Detections
+
+Default: false
+
+If checked, the VirusTotal integration will show files in the notification overlay that have no detections.
+
 ### API Key Limit Reach Warning
 
-If checked, the VirusTotal integration will display warnings in the notification window when you have hit the VirusTotal lookup limit for the api key you are currently using.
+If checked, the VirusTotal integration will display warnings in the notification overlay when you have hit the VirusTotal lookup limit for the api key you are currently using.
 
 ## Installation Instructions
 
