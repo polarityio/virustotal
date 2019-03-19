@@ -50,7 +50,7 @@ function doLookup(entities, options, cb) {
       // We only want to show the message once per throttleDuration (defaults to 1 minute).
       if(options.warnOnThrottle && throttleCache.get(options.apiKey) === false) {
           throttleCache.set(options.apiKey, true)
-          return cb(`Throttling VirusTotal Queries for ${options.lookupThrottleDuration} minute`, []);
+          return cb(`Throttling lookups for ${options.lookupThrottleDuration} minute`, []);
       }else{
           return cb(null, []);
       }
@@ -404,13 +404,13 @@ function _lookupIp(ipEntity, options, done) {
         return;
       }
       let ipLookupResults = [];
-      ipLookupResults = _processIpLookupItem(result, ipEntity, ipLookupResults);
+      ipLookupResults = _processIpLookupItem(result, ipEntity, ipLookupResults, options.showIpsWithNoDetections);
       done(null, ipLookupResults);
     });
   });
 }
 
-function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults) {
+function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults, showIpsWithNoDetections) {
   /**
    * asn (string)
    * response_code (integer)
@@ -447,6 +447,16 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults) {
   if (virusTotalResultItem.response_code === 1) {
     // Compute the details
     let details = _computeIpDetails(virusTotalResultItem);
+
+    if(details.overallPositives === 0 && showIpsWithNoDetections === false){
+        // don't show any results if there are no positive detections and the user has not set showIpsWithNoDetections to true
+        // We cache as a miss eventhough
+        ipLookupResults.push({
+            entity: ipEntity,
+            data: null
+        });
+        return ipLookupResults;
+    }
 
     if (details.numResolutions === 0 && details.overallPositives === 0 && details.overallTotal === 0) {
       Logger.debug({ ip: ipEntity.value }, 'No Positive Detections or Resolutions');

@@ -22,7 +22,7 @@ module.exports = {
    * @type String
    * @optional
    */
-  description: 'VirusTotal Integration for File and IP Address Reports',
+  description: 'VirusTotal Integration for File and IP Address Reports via the Public API v2.0',
   entityTypes: ['IPv4', 'hash'],
   /**
    * An array of style files (css or less) that will be included for your integration. Any styles specified in
@@ -79,7 +79,7 @@ module.exports = {
     level: 'info', //trace, debug, info, warn, error, fatal
     // Special flag to log per hour unique hash and ip counts to the log file
     // Counts are reset every 24 hours
-    logLookupStats: true
+    logLookupStats: false
   },
   /**
    * Options that are displayed to the user/admin in the Polarity integration user-interface.  Should be structured
@@ -99,6 +99,16 @@ module.exports = {
       adminOnly: false
     },
     {
+      key: 'showNoDetections',
+      name: 'Show All File Scanner AV Results',
+      description:
+        'If checked, the integration will show all AV scanner results for files (hashes) even if the AV scanner did not detect the sample as a positive detection.  Default is to show all results.  Uncheck to only show positive AV detections in the scanner results table.',
+      default: true,
+      type: 'boolean',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
       key: 'showHashesWithNoDetections',
       name: 'Show Files (Hashes) with No Detections',
       description: 'If checked, the integration will show results for files that have no positive detections.',
@@ -108,11 +118,41 @@ module.exports = {
       adminOnly: false
     },
     {
-      key: 'warnOnLookupLimit',
-      name: 'API Key Limit Reached Warning',
+      key: 'showIpsWithNoDetections',
+      name: 'Show IP Addresses with No Detections',
       description:
-        'Displays a Warning in the Notification Window if you have reached your' + ' VirusTotal API key lookup limit',
+        'If checked, the integration will show results for IP addresses that have no positive detections.  By default, the integration will not show IP reports with no positive detections even if the IP address in question has a resolved hostname. ',
       default: false,
+      type: 'boolean',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
+      key: 'warnOnLookupLimit',
+      name: 'API Key Lookup Limit Reached Warning Message',
+      description:
+        'Displays a Warning in the Notification Window if you have reached your VirusTotal API key lookup limit.',
+      default: false,
+      type: 'boolean',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
+      key: 'lookupThrottleDuration',
+      name: 'Lookup Throttle Duration',
+      description:
+        'The amount of time in minutes the integration will throttle your VirusTotal lookups in event that you hit your lookup limit.  Once throttling has started no lookups for your configured API key will be made until the throttle time has passed.  Defaults to 1 minute.',
+      default: 1,
+      type: 'number',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
+      key: 'warnOnThrottle',
+      name: 'Lookup Throttle Warning Message',
+      description:
+        'If checked, the integration will display a warning message in the overlay window when your VirusTotal lookups are being throttled.',
+      default: true,
       type: 'boolean',
       userCanEdit: true,
       adminOnly: false
