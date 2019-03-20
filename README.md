@@ -4,7 +4,7 @@ Polarity's VirusTotal integration gives users access to automated MD5, SHA1, SHA
 
 VirusTotal is a free service that analyzes suspicious files and URLs and facilitates the quick detection of viruses, worms, trojans, and all kinds of malware.  For more information about VirusTotal please visit https://www.virustotal.com/
 
-| ![image](https://cloud.githubusercontent.com/assets/306319/24308680/644b36b8-109f-11e7-929f-bbfb7a322622.png) | ![image](https://cloud.githubusercontent.com/assets/306319/24308814/de543ae0-109f-11e7-8498-f3d85d4bc093.png) |
+| ![image](https://user-images.githubusercontent.com/306319/54649711-be923400-4a81-11e9-8bbb-2bfd99bb4394.png) | ![image](https://user-images.githubusercontent.com/306319/54649751-da95d580-4a81-11e9-8d8a-ebf39b97e864.png) |
 |---|---|
 |*VirusTotal Lookup of an MD5 Hash* | *VirusTotal Lookup of an IPv4 Address* |
 
@@ -40,6 +40,6 @@ Installation instructions for integrations are provided on the [PolarityIO GitHu
 
 ## Polarity
 
-Polarity is a memory-augmentation platform that improves and accelerates analyst decision making.  For more information about the Polarity platform please see: 
+Polarity is a memory-augmentation platform that improves and accelerates analyst decision making.  For more information about the Polarity platform please see:
 
 https://polarity.io/
