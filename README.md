@@ -16,23 +16,35 @@ Your VirusTotal API Key (free or commercial)
 
 > Note that the VirusTotal platform throttles lookups that make use of free public API keys to approximately four lookups a minute.
 
-### Lookup IP Addresses
+### Show All File Scanner AV Results
 
-If checked, the VirusTotal integration will send IPv4 addresses to VirusTotal for lookup.
+Default: true
 
-### Lookup Files (Hashes)
-
-If checked, the VirusTotal integration will send MD5, SHA1, and SHA256 hashes to VirusTotal for lookup.
+If checked, the integration will show all AV scanner results for files (hashes) even if the AV scanner did not detect the sample as a positive detection. Default is to show all results. Uncheck to only show positive AV detections in the scanner results table.
 
 ### Show Files (Hashes) with No Detections
 
 Default: false
 
-If checked, the VirusTotal integration will show files in the notification overlay that have no detections.
+If checked, the integration will show results for files that have no positive detections.
 
-### API Key Limit Reach Warning
+### Show IP Addresses with No Detections
 
-If checked, the VirusTotal integration will display warnings in the notification overlay when you have hit the VirusTotal lookup limit for the api key you are currently using.
+Default: false
+
+If checked, the integration will show results for IP addresses that have no positive detections. By default, the integration will not show IP reports with no positive detections even if the IP address in question has a resolved hostname.
+
+### API Key Lookup Limit Reached Warning Message
+
+Displays a warning in the Notification Window if you have reached your VirusTotal API key lookup limit.
+
+### Lookup Throttle Duration
+
+The amount of time in minutes the integration will throttle your VirusTotal lookups in the event that you hit your lookup limit. Once throttling has started no lookups for your configured API key will be made until the throttle time has passed. Defaults to 1 minute.
+
+### Lookup Throttle Warning Message
+
+If checked, the integration will display a warning message in the overlay window when your VirusTotal lookups are being throttled.  Only one message will be shown per throttle duration.
 
 ## Installation Instructions
 

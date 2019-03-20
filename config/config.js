@@ -131,7 +131,7 @@ module.exports = {
       key: 'warnOnLookupLimit',
       name: 'API Key Lookup Limit Reached Warning Message',
       description:
-        'Displays a Warning in the Notification Window if you have reached your VirusTotal API key lookup limit.',
+        'Displays a warning in the Notification Window if you have reached your VirusTotal API key lookup limit.',
       default: false,
       type: 'boolean',
       userCanEdit: true,
@@ -141,7 +141,7 @@ module.exports = {
       key: 'lookupThrottleDuration',
       name: 'Lookup Throttle Duration',
       description:
-        'The amount of time in minutes the integration will throttle your VirusTotal lookups in event that you hit your lookup limit.  Once throttling has started no lookups for your configured API key will be made until the throttle time has passed.  Defaults to 1 minute.',
+        'The amount of time in minutes the integration will throttle your VirusTotal lookups in the event that you hit your lookup limit.  Once throttling has started no lookups for your configured API key will be made until the throttle time has passed.  Defaults to 1 minute.',
       default: 1,
       type: 'number',
       userCanEdit: true,
@@ -151,7 +151,7 @@ module.exports = {
       key: 'warnOnThrottle',
       name: 'Lookup Throttle Warning Message',
       description:
-        'If checked, the integration will display a warning message in the overlay window when your VirusTotal lookups are being throttled.',
+        'If checked, the integration will display a warning message in the overlay window when your VirusTotal lookups are being throttled. Only one message will be shown per throttle duration.',
       default: true,
       type: 'boolean',
       userCanEdit: true,
