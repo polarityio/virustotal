@@ -1,8 +1,8 @@
 # Polarity VirusTotal Integration
 
-Polarity's VirusTotal integration gives users access to automated MD5, SHA1, SHA256, and IPv4 lookups within VirusTotal.
+Polarity's VirusTotal integration gives users access to automated MD5, SHA1, SHA256, and IPv4 lookups within VirusTotal and makes use of the public v2.0 REST API.
 
-VirusTotal is a free service that analyzes suspicious files and URLs and facilitates the quick detection of viruses, worms, trojans, and all kinds of malware.  For more information about VirusTotal please visit https://www.virustotal.com/
+VirusTotal is a free service that analyzes suspicious files and URLs and facilitates the quick detection of viruses, worms, trojans, and all kinds of malware.  For more information about VirusTotal and to sign up for a free API key please visit https://www.virustotal.com/.
 
 | ![image](https://user-images.githubusercontent.com/306319/54649711-be923400-4a81-11e9-8bbb-2bfd99bb4394.png) | ![image](https://user-images.githubusercontent.com/306319/54649751-da95d580-4a81-11e9-8d8a-ebf39b97e864.png) |
 |---|---|
@@ -36,13 +36,19 @@ If checked, the integration will show results for IP addresses that have no posi
 
 ### API Key Lookup Limit Reached Warning Message
 
+Default: false
+
 Displays a warning in the Notification Window if you have reached your VirusTotal API key lookup limit.
 
 ### Lookup Throttle Duration
 
+Default: 1 minute
+
 The amount of time in minutes the integration will throttle your VirusTotal lookups in the event that you hit your lookup limit. Once throttling has started no lookups for your configured API key will be made until the throttle time has passed. Defaults to 1 minute.
 
 ### Lookup Throttle Warning Message
+
+Default: true
 
 If checked, the integration will display a warning message in the overlay window when your VirusTotal lookups are being throttled.  Only one message will be shown per throttle duration.
 
