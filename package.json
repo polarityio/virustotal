@@ -6,7 +6,8 @@
   "dependencies": {
     "request": "^2.88",
     "lodash": "^4.17",
-    "async": "^2.6"
+    "async": "^2.6",
+    "snyk": "^1.189.0"
   },
   "devDependencies": {
     "chai": "^4.2",
@@ -14,6 +15,9 @@
     "nock": "^10.0"
   },
   "scripts": {
-    "test": "./node_modules/.bin/mocha --recursive"
-  }
+    "test": "./node_modules/.bin/mocha --recursive",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
+  },
+  "snyk": true
 }
