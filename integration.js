@@ -1,8 +1,8 @@
 'use strict';
 
 const request = require('request');
+const { getRequestOptions } = require('./request-options.js');
 const _ = require('lodash');
-const util = require('util');
 const config = require('./config/config');
 const async = require('async');
 const PendingLookupCache = require('./lib/pending-lookup-cache');
@@ -15,8 +15,7 @@ let doLookupLogging;
 let lookupHashSet;
 let lookupIpSet;
 
-let requestOptionsIp = {};
-let requestOptionsHash = {};
+let requestWithDefaults;
 
 const debugLookupStats = {
   hourCount: 0,
@@ -45,15 +44,15 @@ const IP_LOOKUP_URI = 'https://www.virustotal.com/vtapi/v2/ip-address/report';
  * @param cb
  */
 function doLookup(entities, options, cb) {
-  if(throttleCache.has(options.apiKey)){
-      // the throttleCache stores whether or not we've shown the throttle warning message for this throttle duration
-      // We only want to show the message once per throttleDuration (defaults to 1 minute).
-      if(options.warnOnThrottle && throttleCache.get(options.apiKey) === false) {
-          throttleCache.set(options.apiKey, true)
-          return cb(`Throttling lookups for ${options.lookupThrottleDuration} minute`, []);
-      }else{
-          return cb(null, []);
-      }
+  if (throttleCache.has(options.apiKey)) {
+    // the throttleCache stores whether or not we've shown the throttle warning message for this throttle duration
+    // We only want to show the message once per throttleDuration (defaults to 1 minute).
+    if (options.warnOnThrottle && throttleCache.get(options.apiKey) === false) {
+      throttleCache.set(options.apiKey, true);
+      return cb(`Throttling lookups for ${options.lookupThrottleDuration} minute`, []);
+    } else {
+      return cb(null, []);
+    }
   }
 
   let ipv4Entities = new Array();
@@ -263,21 +262,21 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
     debugLookupStats.hashLookups++;
   }
 
-  //do the lookup
-  requestOptionsHash.uri = HASH_LOOKUP_URI;
-  requestOptionsHash.method = 'POST';
-  requestOptionsHash.headers = {
-    'Content-Type': 'application/x-www-form-encoded'
+  let requestOptions = {
+    uri: HASH_LOOKUP_URI,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-encoded'
+    },
+    form: {
+      apikey: options.apiKey,
+      resource: hashesArray.join(', ')
+    }
   };
-  requestOptionsHash.form = {
-    apikey: options.apiKey,
-    resource: hashesArray.join(', ')
-  };
-  requestOptionsHash.json = true;
 
-  //Logger.debug({requestOptionsHash: requestOptionsHash}, 'Request Options for Hash Lookup');
-
-  request(requestOptionsHash, function(err, response, body) {
+  let transformedRequestOptions = getRequestOptions(requestOptions, options);
+  Logger.debug({ transformedRequestOptions: transformedRequestOptions }, 'Request Options for Hash Lookup');
+  requestWithDefaults(transformedRequestOptions, function(err, response, body) {
     _handleRequestError(err, response, body, options, function(err, body) {
       if (err) {
         Logger.error({ err: err }, 'Error Looking up Hash');
@@ -385,18 +384,17 @@ function _lookupIp(ipEntity, options, done) {
     debugLookupStats.ipLookups++;
   }
 
-  //do the lookup
-  requestOptionsIp.uri = IP_LOOKUP_URI;
-  requestOptionsIp.method = 'GET';
-  requestOptionsIp.qs = {
-    apikey: options.apiKey,
-    ip: ipEntity.value
+  let requestOptions = {
+    uri: IP_LOOKUP_URI,
+    method: 'GET',
+    qs: {
+      apikey: options.apiKey,
+      ip: ipEntity.value
+    }
   };
-  requestOptionsIp.json = true;
-
-  //Logger.debug({requestOptionsIp:requestOptionsIp}, 'Options for IP Lookup');
-
-  request(requestOptionsIp, function(err, response, body) {
+  let transformedRequestOptions = getRequestOptions(requestOptions, options);
+  Logger.debug({ transformedRequestOptions: transformedRequestOptions }, 'Request Options for IP Lookup');
+  requestWithDefaults(transformedRequestOptions, function(err, response, body) {
     _handleRequestError(err, response, body, options, function(err, result) {
       if (err) {
         Logger.error({ err: err }, 'Error Looking up IP');
@@ -448,14 +446,14 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults, s
     // Compute the details
     let details = _computeIpDetails(virusTotalResultItem);
 
-    if(details.overallPositives === 0 && showIpsWithNoDetections === false){
-        // don't show any results if there are no positive detections and the user has not set showIpsWithNoDetections to true
-        // We cache as a miss eventhough
-        ipLookupResults.push({
-            entity: ipEntity,
-            data: null
-        });
-        return ipLookupResults;
+    if (details.overallPositives === 0 && showIpsWithNoDetections === false) {
+      // don't show any results if there are no positive detections and the user has not set showIpsWithNoDetections to true
+      // We cache as a miss eventhough
+      ipLookupResults.push({
+        entity: ipEntity,
+        data: null
+      });
+      return ipLookupResults;
     }
 
     if (details.numResolutions === 0 && details.overallPositives === 0 && details.overallTotal === 0) {
@@ -470,7 +468,10 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults, s
       ipLookupResults.push({
         entity: ipEntity,
         data: {
-          summary: [`${GLOBE_ICON} ${details.numResolutions}`, `${details.overallPositives} ${BUG_ICON}/ ${details.overallTotal}`],
+          summary: [
+            `${GLOBE_ICON} ${details.numResolutions}`,
+            `${details.overallPositives} ${BUG_ICON}/ ${details.overallTotal}`
+          ],
           details: details
         }
       });
@@ -602,33 +603,35 @@ function startup(logger) {
     pendingLookupCache.setEnabled(true);
   }
 
+  let defaults = {};
+
   if (typeof config.request.cert === 'string' && config.request.cert.length > 0) {
-    requestOptionsIp.cert = fs.readFileSync(config.request.cert);
-    requestOptionsHash.cert = fs.readFileSync(config.request.cert);
+    defaults.cert = fs.readFileSync(config.request.cert);
   }
 
   if (typeof config.request.key === 'string' && config.request.key.length > 0) {
-    requestOptionsIp.key = fs.readFileSync(config.request.key);
-    requestOptionsHash.key = fs.readFileSync(config.request.key);
+    defaults.key = fs.readFileSync(config.request.key);
   }
 
   if (typeof config.request.passphrase === 'string' && config.request.passphrase.length > 0) {
-    requestOptionsIp.passphrase = config.request.passphrase;
-    requestOptionsHash.passphrase = config.request.passphrase;
+    defaults.passphrase = config.request.passphrase;
   }
 
   if (typeof config.request.ca === 'string' && config.request.ca.length > 0) {
-    requestOptionsIp.ca = fs.readFileSync(config.request.ca);
-    requestOptionsHash.ca = fs.readFileSync(config.request.ca);
+    defaults.ca = fs.readFileSync(config.request.ca);
   }
 
   if (typeof config.request.proxy === 'string' && config.request.proxy.length > 0) {
-    requestOptionsIp.proxy = config.request.proxy;
-    requestOptionsHash.proxy = config.request.proxy;
+    defaults.proxy = config.request.proxy;
   }
 
-  // Logger.info({requestOptionsIp: requestOptionsIp}, 'requestOptionsIp after load');
-  // Logger.info({requestOptionsHash: requestOptionsHash}, 'requestOptionsHash after load');
+  if (typeof config.request.rejectUnauthorized === 'boolean') {
+    defaults.rejectUnauthorized = config.request.rejectUnauthorized;
+  }
+
+  defaults.json = true;
+
+  requestWithDefaults = request.defaults(defaults);
 }
 
 function _logLookupStats() {
