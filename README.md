@@ -34,6 +34,13 @@ Default: false
 
 If checked, the integration will show results for IP addresses that have no positive detections. By default, the integration will not show IP reports with no positive detections even if the IP address in question has a resolved hostname.
 
+### Show Domains with No Detections
+
+Default: false
+
+If checked, the integration will show results for Domains that have no positive detections.
+
+
 ### API Key Lookup Limit Reached Warning Message
 
 Default: false

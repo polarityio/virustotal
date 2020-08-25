@@ -1,6 +1,10 @@
-{{#if (eq block.data.details.type 'ip')}}
+{{#if (or (eq details.type 'ip') (eq details.type 'domain'))}}
     <div class="p-link">
-        <a href="{{ipVirusTotalLink}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+        {{#if (eq details.type 'ip') }}
+            <a href="{{ipVirusTotalLink}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+        {{else}}
+            <a href="{{domainVirusTotalLink}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+        {{/if}}
     </div>
     <div>
         <span class="p-title">{{fa-icon "sun" fixedWidth=true}} Detections</span>
@@ -15,33 +19,33 @@
         <tbody>
         <tr>
             <td>Overall</td>
-            <td>{{block.data.details.overallPercent}}</td>
-            <td>{{block.data.details.overallPositives}}</td>
-            <td>{{block.data.details.overallTotal}}</td>
+            <td>{{details.overallPercent}}</td>
+            <td>{{details.overallPositives}}</td>
+            <td>{{details.overallTotal}}</td>
         </tr>
         <tr>
             <td>URLs</td>
-            <td>{{block.data.details.detectedUrlsPercent}}</td>
-            <td>{{block.data.details.detectedUrlsPositive}}</td>
-            <td>{{block.data.details.detectedUrlsTotal}}</td>
+            <td>{{details.detectedUrlsPercent}}</td>
+            <td>{{details.detectedUrlsPositive}}</td>
+            <td>{{details.detectedUrlsTotal}}</td>
         </tr>
         <tr>
             <td>Communicating</td>
-            <td>{{block.data.details.detectedCommunicatingSamplesPercent}}</td>
-            <td>{{block.data.details.detectedCommunicatingSamplesPositive}}</td>
-            <td>{{block.data.details.detectedCommunicatingSamplesTotal}}</td>
+            <td>{{details.detectedCommunicatingSamplesPercent}}</td>
+            <td>{{details.detectedCommunicatingSamplesPositive}}</td>
+            <td>{{details.detectedCommunicatingSamplesTotal}}</td>
         </tr>
         <tr>
             <td>Downloaded</td>
-            <td>{{block.data.details.detectedDownloadedSamplesPercent}}</td>
-            <td>{{block.data.details.detectedDownloadedSamplesPositive}}</td>
-            <td>{{block.data.details.detectedDownloadedSamplesTotal}}</td>
+            <td>{{details.detectedDownloadedSamplesPercent}}</td>
+            <td>{{details.detectedDownloadedSamplesPositive}}</td>
+            <td>{{details.detectedDownloadedSamplesTotal}}</td>
         </tr>
         <tr>
             <td>Embedded</td>
-            <td>{{block.data.details.detectedReferrerSamplesPercent}}</td>
-            <td>{{block.data.details.detectedReferrerSamplesPositive}}</td>
-            <td>{{block.data.details.detectedReferrerSamplesTotal}}</td>
+            <td>{{details.detectedReferrerSamplesPercent}}</td>
+            <td>{{details.detectedReferrerSamplesPositive}}</td>
+            <td>{{details.detectedReferrerSamplesTotal}}</td>
         </tr>
         </tbody>
     </table>
@@ -51,14 +55,18 @@
         </div>
     {{else}}
         <div>
-            <span class="p-title">{{fa-icon "laptop" fixedWidth=true}}Hostname Resolutions ({{numResolutionsShown}} of {{block.data.details.numResolutions}})</span>
+            <span class="p-title">{{fa-icon "laptop" fixedWidth=true}}{{if (eq details.type 'ip') "Hostname" "IP"}} Resolutions ({{numResolutionsShown}} of {{details.numResolutions}})</span>
         </div>
         <table class="p-table" style="margin-top:10px;">
             <tbody>
-            {{#each (limit block.data.details.resolutions maxResolutionsToShow) as |resolution|}}
+            {{#each (limit details.resolutions maxResolutionsToShow) as |resolution|}}
                 <tr>
                     <td>
-                        {{resolution.hostname}}
+                        {{#if (eq details.type 'ip') }}
+                            {{resolution.hostname}}
+                        {{else}}
+                            {{resolution.ip_address}}
+                        {{/if}}
                         <p>
                             <b class="muted">Last Resolved</b>: {{moment-format resolution.last_resolved timeZone=timeZone}}
                         </p>
@@ -74,7 +82,7 @@
         </div>
     {{else}}
         <div class="p-title">
-            {{fa-icon "globe" fixedWidth=true}} Detected URLs ({{numUrlsShown}} of {{block.data.details.detectedUrls.length}})
+            {{fa-icon "globe" fixedWidth=true}} Detected URLs ({{numUrlsShown}} of {{details.detectedUrls.length}})
         </div>
         <table class="p-table" style="margin-top:5px;">
             <thead>
@@ -84,7 +92,7 @@
             </tr>
             </thead>
             <tbody>
-            {{#each (limit block.data.details.detectedUrls maxUrlsToShow) as |url|}}
+            {{#each (limit details.detectedUrls maxUrlsToShow) as |url|}}
                 <tr>
                     <td class="positives">{{url.positives}} / {{url.total}}</td>
                     <td>
@@ -100,20 +108,20 @@
     {{/if}}
 {{/if}}
 
-{{#if (eq block.data.details.type 'file')}}
+{{#if (eq details.type 'file')}}
 
     <div class="p-link">
-        <a href="{{block.data.details.permalink}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+        <a href="{{details.permalink}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
     </div>
     <div>
         <span class="p-title">{{fa-icon "file" fixedWidth=true}} File Report</span>
     </div>
     <div>
         <span class="p-key">Scan Date:</span>
-        <span class="p-value">{{moment-format block.data.details.scan_date timeZone=timeZone}}</span>
+        <span class="p-value">{{moment-format details.scan_date timeZone=timeZone}}</span>
     </div>
     <div>
-        <span class="p-key">{{block.data.details.positives}} positive detections out of {{block.data.details.total}}</span>
+        <span class="p-key">{{details.positives}} positive detections out of {{details.total}}</span>
     </div>
 
     <table>
@@ -123,7 +131,7 @@
             <th>Result</th>
         </thead>
         <tbody>
-        {{#each-in block.data.details.scans as |key value|}}
+        {{#each-in details.scans as |key value|}}
             {{#if (or (and (not value.detected) block.userOptions.showNoDetections) value.detected)}}
                 <tr>
                     <td style="width:20px">

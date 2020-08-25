@@ -23,7 +23,7 @@ module.exports = {
    * @optional
    */
   description: 'VirusTotal Integration for File and IP Address Reports via the Public API v2.0',
-  entityTypes: ['IPv4', 'hash'],
+  entityTypes: ['domain', 'IPv4', 'hash'],
   /**
    * An array of style files (css or less) that will be included for your integration. Any styles specified in
    * the below files can be used in your custom template.
@@ -94,7 +94,7 @@ module.exports = {
       name: 'VirusTotal API Key',
       description: 'Your VirusTotal API Key',
       default: '',
-      type: 'text',
+      type: 'password',
       userCanEdit: true,
       adminOnly: false
     },
@@ -122,6 +122,16 @@ module.exports = {
       name: 'Show IP Addresses with No Detections',
       description:
         'If checked, the integration will show results for IP addresses that have no positive detections.  By default, the integration will not show IP reports with no positive detections even if the IP address in question has a resolved hostname. ',
+      default: false,
+      type: 'boolean',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
+      key: 'showDomainsWithNoDetections',
+      name: 'Show Domains with No Detections',
+      description:
+        'If checked, the integration will show results for Domains that have no positive detections.',
       default: false,
       type: 'boolean',
       userCanEdit: true,

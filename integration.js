@@ -14,6 +14,7 @@ let pendingLookupCache;
 let doLookupLogging;
 let lookupHashSet;
 let lookupIpSet;
+let lookupDomainSet;
 
 let requestWithDefaults;
 
@@ -22,9 +23,12 @@ const debugLookupStats = {
   dayCount: 0,
   hashCount: 0,
   ipCount: 0,
+  domainCount: 0,
   ipLookups: 0,
+  domainLookups: 0, 
   hashLookups: 0
 };
+
 
 const throttleCache = new Map();
 
@@ -34,8 +38,12 @@ const GLOBE_ICON = `<svg viewBox="0 0 496 512" xmlns="http://www.w3.org/2000/svg
 
 const IGNORED_IPS = new Set(['127.0.0.1', '255.255.255.255', '0.0.0.0']);
 
-const HASH_LOOKUP_URI = 'https://www.virustotal.com/vtapi/v2/file/report';
-const IP_LOOKUP_URI = 'https://www.virustotal.com/vtapi/v2/ip-address/report';
+
+const LOOKUP_URI_MAP = {
+  ip: 'https://www.virustotal.com/vtapi/v2/ip-address/report',
+  domain: 'https://www.virustotal.com/vtapi/v2/domain/report',
+  hash: 'https://www.virustotal.com/vtapi/v2/file/report'
+};
 
 /**
  *
@@ -56,6 +64,7 @@ function doLookup(entities, options, cb) {
   }
 
   let ipv4Entities = new Array();
+  let domainEntities = new Array();
   let entityLookup = {};
   let hashGroups = [];
   let hashGroup = [];
@@ -95,6 +104,14 @@ function doLookup(entities, options, cb) {
       pendingLookupCache.addRunningLookup(entity.value);
 
       ipv4Entities.push(entity);
+    } else if (entity.isDomain) {
+      if (doLookupLogging === true) {
+        lookupDomainSet.add(entity.value);
+      }
+
+      pendingLookupCache.addRunningLookup(entity.value);
+
+      domainEntities.push(entity);
     }
   });
 
@@ -105,15 +122,15 @@ function doLookup(entities, options, cb) {
 
   async.parallel(
     {
-      ipLookups: function(callback) {
+      ipLookups: function (callback) {
         if (ipv4Entities.length > 0) {
           async.concat(
             ipv4Entities,
-            function(ipEntity, concatDone) {
+            function (ipEntity, concatDone) {
               Logger.debug({ ip: ipEntity.value }, 'Looking up IP');
-              _lookupIp(ipEntity, options, concatDone);
+              _lookupEntityType('ip', ipEntity, options, concatDone);
             },
-            function(err, results) {
+            function (err, results) {
               if (err) {
                 callback(err);
                 return;
@@ -125,15 +142,35 @@ function doLookup(entities, options, cb) {
           callback(null, []);
         }
       },
-      hashLookups: function(callback) {
+      domainLookups: function (callback) {
+        if (domainEntities.length > 0) {
+          async.concat(
+            domainEntities,
+            function (domainEntity, concatDone) {
+              Logger.debug({ domain: domainEntity.value }, 'Looking up Domain');
+              _lookupEntityType('domain', domainEntity, options, concatDone);
+            },
+            function (err, results) {
+              if (err) {
+                callback(err);
+                return;
+              }
+              callback(null, results);
+            }
+          );
+        } else {
+          callback(null, []);
+        }
+      },
+      hashLookups: function (callback) {
         if (hashGroups.length > 0) {
           Logger.debug({ hashGroups: hashGroups }, 'Looking up HashGroups');
           async.map(
             hashGroups,
-            function(hashGroup, mapDone) {
+            function (hashGroup, mapDone) {
               _lookupHash(hashGroup, entityLookup, options, mapDone);
             },
-            function(err, results) {
+            function (err, results) {
               if (err) {
                 callback(err);
                 return;
@@ -143,8 +180,8 @@ function doLookup(entities, options, cb) {
 
               //results is an array of hashGroup results (i.e., an array of arrays)
               let unrolledResults = [];
-              results.forEach(function(hashGroup) {
-                hashGroup.forEach(function(hashResult) {
+              results.forEach(function (hashGroup) {
+                hashGroup.forEach(function (hashResult) {
                   unrolledResults.push(hashResult);
                 });
               });
@@ -157,7 +194,7 @@ function doLookup(entities, options, cb) {
         }
       }
     },
-    function(err, lookupResults) {
+    function (err, lookupResults) {
       if (err) {
         pendingLookupCache.reset();
         cb(err);
@@ -165,13 +202,19 @@ function doLookup(entities, options, cb) {
       }
 
       let combinedResults = new Array();
-      lookupResults.hashLookups.forEach(function(lookupResult) {
+      lookupResults.hashLookups.forEach(function (lookupResult) {
         pendingLookupCache.removeRunningLookup(lookupResult.entity.value);
         pendingLookupCache.executePendingLookups(lookupResult);
         combinedResults.push(lookupResult);
       });
 
-      lookupResults.ipLookups.forEach(function(lookupResult) {
+      lookupResults.ipLookups.forEach(function (lookupResult) {
+        pendingLookupCache.removeRunningLookup(lookupResult.entity.value);
+        pendingLookupCache.executePendingLookups(lookupResult);
+        combinedResults.push(lookupResult);
+      });
+
+      lookupResults.domainLookups.forEach(function (lookupResult) {
         pendingLookupCache.removeRunningLookup(lookupResult.entity.value);
         pendingLookupCache.executePendingLookups(lookupResult);
         combinedResults.push(lookupResult);
@@ -263,7 +306,7 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
   }
 
   let requestOptions = {
-    uri: HASH_LOOKUP_URI,
+    uri: LOOKUP_URI_MAP['hash'],
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-encoded'
@@ -279,9 +322,8 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
   requestWithDefaults(transformedRequestOptions, function(err, response, body) {
     _handleRequestError(err, response, body, options, function(err, body) {
       if (err) {
-        Logger.error({ err: err }, 'Error Looking up Hash');
-        done(err);
-        return;
+        Logger.error(err, 'Error Looking up Hash');
+        return done(err);
       }
 
       let hashLookupResults = [];
@@ -378,37 +420,44 @@ function _isHashLookupResultHit(virusTotalResultItem, showHashesWithNoDetections
   return false;
 }
 
-function _lookupIp(ipEntity, options, done) {
-  //do the lookup
-  if (doLookupLogging === true) {
-    debugLookupStats.ipLookups++;
-  }
+
+function _lookupEntityType(type, entity, options, done) {
+  if (doLookupLogging) 
+    debugLookupStats[`${type}Lookups`]++;
 
   let requestOptions = {
-    uri: IP_LOOKUP_URI,
+    uri: LOOKUP_URI_MAP[type],
     method: 'GET',
     qs: {
       apikey: options.apiKey,
-      ip: ipEntity.value
+      [type]: entity.value
     }
   };
+
   let transformedRequestOptions = getRequestOptions(requestOptions, options);
-  Logger.debug({ transformedRequestOptions: transformedRequestOptions }, 'Request Options for IP Lookup');
+  Logger.debug({ transformedRequestOptions }, `Request Options for ${type} Lookup`);
+
   requestWithDefaults(transformedRequestOptions, function(err, response, body) {
     _handleRequestError(err, response, body, options, function(err, result) {
       if (err) {
-        Logger.error({ err: err }, 'Error Looking up IP');
-        done(err);
-        return;
+        Logger.error(err, 'Error Looking up Domain');
+        return done(err);
       }
-      let ipLookupResults = [];
-      ipLookupResults = _processIpLookupItem(result, ipEntity, ipLookupResults, options.showIpsWithNoDetections);
-      done(null, ipLookupResults);
+      let lookupResults = [];
+      lookupResults = _processLookupItem(
+        type,
+        result,
+        entity,
+        lookupResults,
+        options[`show${_.startCase(type)}sWithNoDetections`]
+      );
+
+      done(null, lookupResults);
     });
   });
 }
 
-function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults, showIpsWithNoDetections) {
+function _processLookupItem(type, virusTotalResultItem, entity, lookupResults, showEntityWithNoDetections) {
   /**
    * asn (string)
    * response_code (integer)
@@ -440,58 +489,58 @@ function _processIpLookupItem(virusTotalResultItem, ipEntity, ipLookupResults, s
    *      .sha256
    *  resolutions
    *      .last_resolved
-   *      .hostname
+   *      .hostname || .ip_address
    */
   if (virusTotalResultItem.response_code === 1) {
     // Compute the details
-    let details = _computeIpDetails(virusTotalResultItem);
+    let details = _computeDetails(virusTotalResultItem, type);
 
-    if (details.overallPositives === 0 && showIpsWithNoDetections === false) {
-      // don't show any results if there are no positive detections and the user has not set showIpsWithNoDetections to true
+    if (details.overallPositives === 0 && showEntityWithNoDetections === false) {
+      // don't show any results if there are no positive detections and the user has not set showEntityWithNoDetections to true
       // We cache as a miss eventhough
-      ipLookupResults.push({
-        entity: ipEntity,
+      lookupResults.push({
+        entity,
         data: null
       });
-      return ipLookupResults;
+      return lookupResults;
     }
 
     if (details.numResolutions === 0 && details.overallPositives === 0 && details.overallTotal === 0) {
-      Logger.debug({ ip: ipEntity.value }, 'No Positive Detections or Resolutions');
+      Logger.debug({ [type]: entity.value }, 'No Positive Detections or Resolutions');
       // This was an empty result so we just push a null data value
-      ipLookupResults.push({
-        entity: ipEntity,
+      lookupResults.push({
+        entity,
         data: null
       });
     } else {
-      Logger.debug({ ip: ipEntity.value }, 'Had Result');
-      ipLookupResults.push({
-        entity: ipEntity,
+      Logger.debug({ [type]: entity.value }, 'Had Result');
+      lookupResults.push({
+        entity,
         data: {
           summary: [
             `${GLOBE_ICON} ${details.numResolutions}`,
             `${details.overallPositives} ${BUG_ICON}/ ${details.overallTotal}`
           ],
-          details: details
+          details
         }
       });
     }
   } else if (virusTotalResultItem.response_code === 0) {
-    Logger.debug({ ip: ipEntity.value }, 'No Result');
+    Logger.debug({ [type]: entity.value }, 'No Result');
     // This was an empty result so we just push a null data value
-    ipLookupResults.push({
-      entity: ipEntity,
+    lookupResults.push({
+      entity: entity,
       data: null
     });
   }
 
-  return ipLookupResults;
+  return lookupResults;
 }
 
-function _computeIpDetails(result) {
+function _computeDetails(result, type) {
   // Initialize our computed values that we want to pass through to the notification window
   let computedResults = {
-    type: 'ip',
+    type,
     overallPositives: 0,
     overallTotal: 0,
     overallPercent: 0,
@@ -591,6 +640,7 @@ function startup(logger) {
     doLookupLogging = true;
     lookupHashSet = new Set();
     lookupIpSet = new Set();
+    lookupDomainSet = new Set();
     // Print log every hour
     setInterval(_logLookupStats, 60 * 60 * 1000);
   } else {
@@ -636,6 +686,7 @@ function startup(logger) {
 
 function _logLookupStats() {
   debugLookupStats.ipCount = lookupIpSet.size;
+  debugLookupStats.domainCount = lookupDomainSet.size;
   debugLookupStats.hashCount = lookupHashSet.size;
 
   Logger.info(debugLookupStats, 'Unique Entity Stats');
@@ -643,10 +694,13 @@ function _logLookupStats() {
   if (debugLookupStats.hourCount == 23) {
     lookupHashSet.clear();
     lookupIpSet.clear();
+    lookupDomainSet.clear();
     debugLookupStats.hourCount = 0;
     debugLookupStats.hashCount = 0;
     debugLookupStats.ipCount = 0;
-    debugLookupStats.ipLookups = 0;
+    debugLookupStats.domainCount = 0;
+    debugLookupStats.ipLookups = 0; 
+    debugLookupStats.domainLookups = 0; 
     debugLookupStats.hashLookups = 0;
     debugLookupStats.dayCount++;
   } else {
