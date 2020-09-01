@@ -15,6 +15,7 @@ let doLookupLogging;
 let lookupHashSet;
 let lookupIpSet;
 let lookupDomainSet;
+let lookupUrlSet;
 
 let requestWithDefaults;
 
@@ -23,9 +24,11 @@ const debugLookupStats = {
   dayCount: 0,
   hashCount: 0,
   ipCount: 0,
-  domainCount: 0,
   ipLookups: 0,
-  domainLookups: 0, 
+  domainCount: 0,
+  domainLookups: 0,
+  urlCount: 0,
+  urlLookups: 0,
   hashLookups: 0
 };
 
@@ -42,7 +45,8 @@ const IGNORED_IPS = new Set(['127.0.0.1', '255.255.255.255', '0.0.0.0']);
 const LOOKUP_URI_MAP = {
   ip: 'https://www.virustotal.com/vtapi/v2/ip-address/report',
   domain: 'https://www.virustotal.com/vtapi/v2/domain/report',
-  hash: 'https://www.virustotal.com/vtapi/v2/file/report'
+  hash: 'https://www.virustotal.com/vtapi/v2/file/report',
+  url: 'https://www.virustotal.com/vtapi/v2/url/report'
 };
 
 /**
@@ -55,7 +59,7 @@ function doLookup(entities, options, cb) {
   if (throttleCache.has(options.apiKey)) {
     // the throttleCache stores whether or not we've shown the throttle warning message for this throttle duration
     // We only want to show the message once per throttleDuration (defaults to 1 minute).
-    if (options.warnOnThrottle && throttleCache.get(options.apiKey) === false) {
+    if (options.warnOnThrottle && !throttleCache.get(options.apiKey)) {
       throttleCache.set(options.apiKey, true);
       return cb(`Throttling lookups for ${options.lookupThrottleDuration} minute`, []);
     } else {
@@ -65,18 +69,17 @@ function doLookup(entities, options, cb) {
 
   let ipv4Entities = new Array();
   let domainEntities = new Array();
+  let urlEntities = new Array();
   let entityLookup = {};
   let hashGroups = [];
   let hashGroup = [];
 
   Logger.trace(entities);
-  const MAX_HASHES_PER_GROUP = options.isPrivateApi === true ? 25 : 4;
+  const MAX_HASHES_PER_GROUP = options.isPrivateApi ? 25 : 4;
 
   entities.forEach(function(entity) {
-    if (pendingLookupCache.isRunning(entity.value)) {
-      pendingLookupCache.addPendingLookup(entity.value, cb);
-      return;
-    }
+    if (pendingLookupCache.isRunning(entity.value))
+      return pendingLookupCache.addPendingLookup(entity.value, cb);
 
     if (entity.isMD5 || entity.isSHA1 || entity.isSHA256) {
       // VT can only look up 4 or 25 hashes at a time depending on the key type
@@ -92,26 +95,30 @@ function doLookup(entities, options, cb) {
         entityLookup[entity.value.toLowerCase()] = entity;
         pendingLookupCache.addRunningLookup(entity.value);
 
-        if (doLookupLogging === true) {
+        if (doLookupLogging)
           lookupHashSet.add(entity.value);
-        }
       }
     } else if (entity.isIPv4 && !entity.isPrivateIP && !IGNORED_IPS.has(entity.value)) {
-      if (doLookupLogging === true) {
+      if (doLookupLogging)
         lookupIpSet.add(entity.value);
-      }
 
       pendingLookupCache.addRunningLookup(entity.value);
 
       ipv4Entities.push(entity);
     } else if (entity.isDomain) {
-      if (doLookupLogging === true) {
+      if (doLookupLogging)
         lookupDomainSet.add(entity.value);
-      }
 
       pendingLookupCache.addRunningLookup(entity.value);
 
       domainEntities.push(entity);
+    } else if (entity.isURL) { 
+      if (doLookupLogging)
+        lookupUrlSet.add(entity.value);
+
+      pendingLookupCache.addRunningLookup(entity.value);
+
+      urlEntities.push(entity);
     }
   });
 
@@ -131,10 +138,8 @@ function doLookup(entities, options, cb) {
               _lookupEntityType('ip', ipEntity, options, concatDone);
             },
             function (err, results) {
-              if (err) {
-                callback(err);
-                return;
-              }
+              if (err) return callback(err);
+
               callback(null, results);
             }
           );
@@ -151,10 +156,26 @@ function doLookup(entities, options, cb) {
               _lookupEntityType('domain', domainEntity, options, concatDone);
             },
             function (err, results) {
-              if (err) {
-                callback(err);
-                return;
-              }
+              if (err) return callback(err);
+
+              callback(null, results);
+            }
+          );
+        } else {
+          callback(null, []);
+        }
+      },
+      urlLookups: function (callback) {
+        if (urlEntities.length > 0) {
+          async.concat(
+            urlEntities,
+            function (urlEntity, concatDone) {
+              Logger.debug({ url: urlEntity.value }, 'Looking up URL');
+              _lookupUrl(urlEntity, options, concatDone);
+            },
+            function (err, results) {
+              if (err) return callback(err);
+
               callback(null, results);
             }
           );
@@ -171,10 +192,7 @@ function doLookup(entities, options, cb) {
               _lookupHash(hashGroup, entityLookup, options, mapDone);
             },
             function (err, results) {
-              if (err) {
-                callback(err);
-                return;
-              }
+              if (err) return callback(err);
 
               Logger.trace({ hashLookupResults: results }, 'HashLookup Results');
 
@@ -197,28 +215,18 @@ function doLookup(entities, options, cb) {
     function (err, lookupResults) {
       if (err) {
         pendingLookupCache.reset();
-        cb(err);
-        return;
+        return cb(err);
       }
 
       let combinedResults = new Array();
-      lookupResults.hashLookups.forEach(function (lookupResult) {
-        pendingLookupCache.removeRunningLookup(lookupResult.entity.value);
-        pendingLookupCache.executePendingLookups(lookupResult);
-        combinedResults.push(lookupResult);
-      });
 
-      lookupResults.ipLookups.forEach(function (lookupResult) {
-        pendingLookupCache.removeRunningLookup(lookupResult.entity.value);
-        pendingLookupCache.executePendingLookups(lookupResult);
-        combinedResults.push(lookupResult);
-      });
-
-      lookupResults.domainLookups.forEach(function (lookupResult) {
-        pendingLookupCache.removeRunningLookup(lookupResult.entity.value);
-        pendingLookupCache.executePendingLookups(lookupResult);
-        combinedResults.push(lookupResult);
-      });
+      ['hashLookups', 'ipLookups', 'domainLookups', 'urlLookups'].forEach((key) =>
+        lookupResults[key].forEach(function (lookupResult) {
+          pendingLookupCache.removeRunningLookup(lookupResult.entity.value);
+          pendingLookupCache.executePendingLookups(lookupResult);
+          combinedResults.push(lookupResult);
+        })
+      );
 
       pendingLookupCache.logStats();
 
@@ -301,12 +309,12 @@ function _handleRequestError(err, response, body, options, cb) {
 }
 
 function _lookupHash(hashesArray, entityLookup, options, done) {
-  if (doLookupLogging === true) {
+  if (doLookupLogging) {
     debugLookupStats.hashLookups++;
   }
 
   let requestOptions = {
-    uri: LOOKUP_URI_MAP['hash'],
+    uri: LOOKUP_URI_MAP.hash,
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-encoded'
@@ -409,17 +417,71 @@ function _isHashLookupMiss(virusTotalResultItem) {
  * @private
  */
 function _isHashLookupResultHit(virusTotalResultItem, showHashesWithNoDetections) {
-  if (virusTotalResultItem.response_code === 1) {
-    if (virusTotalResultItem.positives === 0 && showHashesWithNoDetections === false) {
-      return false;
-    }
-
-    return true;
-  }
-
-  return false;
+  return (
+    virusTotalResultItem.response_code === 1 && !(virusTotalResultItem.positives === 0 && showHashesWithNoDetections)
+  );
 }
 
+
+function _lookupUrl(entity, options, done) {
+  if (doLookupLogging) 
+    debugLookupStats.urlLookups++;
+
+  let requestOptions = {
+    uri: LOOKUP_URI_MAP.url,
+    method: 'GET',
+    qs: {
+      apikey: options.apiKey,
+      resource: entity.value
+    }
+  };
+
+  let transformedRequestOptions = getRequestOptions(requestOptions, options);
+  Logger.debug({ transformedRequestOptions }, 'Request Options for URL Lookup');
+
+  requestWithDefaults(transformedRequestOptions, function(err, response, body) {
+    _handleRequestError(err, response, body, options, function(err, result) {
+      if (err) {
+        Logger.error(err, 'Error Looking up URL');
+        return done(err);
+      }
+
+      const lookupResult = _processUrl(
+        result,
+        entity,
+        options.showUrlsWithNoDetections
+      );
+      Logger.trace({lookupResult, result,  body}, "SLKDFJLSD")
+      done(null, lookupResult);
+    });
+  });
+}
+
+const _processUrl = (result, entity, showUrlsWithNoDetections) =>
+  !result.total ||
+  !result.response_code ||
+  (!result.positives && !showUrlsWithNoDetections)
+    ? {
+        entity,
+        data: null
+      }
+    : {
+        entity,
+        data: {
+          summary: [`${result.positives} ${BUG_ICON}/ ${result.total}`],
+          details: {
+            type: 'url',
+            link: result.permalink,
+            positiveScans: _.chain(result.scans)
+              .map((scanResult, scanName) => ({
+                name: scanName,
+                detected: scanResult.detected,
+                result: scanResult.result
+              }))
+              .filter(({ detected }) => detected)
+          }
+        }
+      };
 
 function _lookupEntityType(type, entity, options, done) {
   if (doLookupLogging) 
@@ -440,7 +502,7 @@ function _lookupEntityType(type, entity, options, done) {
   requestWithDefaults(transformedRequestOptions, function(err, response, body) {
     _handleRequestError(err, response, body, options, function(err, result) {
       if (err) {
-        Logger.error(err, 'Error Looking up Domain');
+        Logger.error(err, `Error Looking up ${_.startCase(type)}`);
         return done(err);
       }
       let lookupResults = [];
@@ -495,7 +557,7 @@ function _processLookupItem(type, virusTotalResultItem, entity, lookupResults, s
     // Compute the details
     let details = _computeDetails(virusTotalResultItem, type);
 
-    if (details.overallPositives === 0 && showEntityWithNoDetections === false) {
+    if (details.overallPositives === 0 && !showEntityWithNoDetections) {
       // don't show any results if there are no positive detections and the user has not set showEntityWithNoDetections to true
       // We cache as a miss eventhough
       lookupResults.push({
@@ -635,12 +697,13 @@ function _createJsonErrorObject(msg, pointer, httpCode, code, title, meta) {
 function startup(logger) {
   Logger = logger;
 
-  if (config && config.logging && config.logging.logLookupStats === true) {
+  if (config && config.logging && config.logging.logLookupStats) {
     Logger.info({ loggerLevel: Logger._level }, 'Will do Lookup Logging');
     doLookupLogging = true;
     lookupHashSet = new Set();
     lookupIpSet = new Set();
     lookupDomainSet = new Set();
+    lookupUrlSet = new Set();
     // Print log every hour
     setInterval(_logLookupStats, 60 * 60 * 1000);
   } else {
@@ -687,6 +750,7 @@ function startup(logger) {
 function _logLookupStats() {
   debugLookupStats.ipCount = lookupIpSet.size;
   debugLookupStats.domainCount = lookupDomainSet.size;
+  debugLookupStats.urlCount = lookupUrlSet.size; 
   debugLookupStats.hashCount = lookupHashSet.size;
 
   Logger.info(debugLookupStats, 'Unique Entity Stats');
@@ -695,12 +759,15 @@ function _logLookupStats() {
     lookupHashSet.clear();
     lookupIpSet.clear();
     lookupDomainSet.clear();
+    lookupUrlSet.clear();
     debugLookupStats.hourCount = 0;
     debugLookupStats.hashCount = 0;
     debugLookupStats.ipCount = 0;
-    debugLookupStats.domainCount = 0;
     debugLookupStats.ipLookups = 0; 
+    debugLookupStats.domainCount = 0;
     debugLookupStats.domainLookups = 0; 
+    debugLookupStats.urlCount = 0;
+    debugLookupStats.urlLookups = 0; 
     debugLookupStats.hashLookups = 0;
     debugLookupStats.dayCount++;
   } else {

@@ -22,8 +22,9 @@ module.exports = {
    * @type String
    * @optional
    */
-  description: 'VirusTotal Integration for File and IP Address Reports via the Public API v2.0',
-  entityTypes: ['domain', 'IPv4', 'hash'],
+  description:
+    'VirusTotal Integration for File and IP Address Reports via the Public API v2.0',
+  entityTypes: ['url', 'domain', 'IPv4', 'hash'],
   /**
    * An array of style files (css or less) that will be included for your integration. Any styles specified in
    * the below files can be used in your custom template.
@@ -73,10 +74,12 @@ module.exports = {
     ca: '',
     // An HTTP proxy to be used. Supports proxy Auth with Basic Auth, identical to support for
     // the url parameter (by embedding the auth info in the uri)
-    proxy: ''
+    proxy: '',
+
+    rejectUnauthorized: false
   },
   logging: {
-    level: 'info', //trace, debug, info, warn, error, fatal
+    level: 'trace', //trace, debug, info, warn, error, fatal
     // Special flag to log per hour unique hash and ip counts to the log file
     // Counts are reset every 24 hours
     logLookupStats: false
@@ -111,7 +114,8 @@ module.exports = {
     {
       key: 'showHashesWithNoDetections',
       name: 'Show Files (Hashes) with No Detections',
-      description: 'If checked, the integration will show results for files that have no positive detections.',
+      description:
+        'If checked, the integration will show results for files that have no positive detections.',
       default: false,
       type: 'boolean',
       userCanEdit: true,
@@ -132,6 +136,16 @@ module.exports = {
       name: 'Show Domains with No Detections',
       description:
         'If checked, the integration will show results for Domains that have no positive detections.',
+      default: false,
+      type: 'boolean',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
+      key: 'showUrlsWithNoDetections',
+      name: 'Show Urls with No Detections',
+      description:
+        'If checked, the integration will show results for Urls that have no positive detections.',
       default: false,
       type: 'boolean',
       userCanEdit: true,

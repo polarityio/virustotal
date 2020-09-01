@@ -107,7 +107,26 @@
         </table>
     {{/if}}
 {{/if}}
-
+{{#if (eq details.type 'url')}}
+    <div class="p-link">
+        <a href="{{details.link}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+    </div>
+    <div>
+        <span class="p-title">{{fa-icon "laptop" fixedWidth=true}} Positive Scan Results</span>
+    </div>
+    {{#if details.positiveScans.length}}
+        {{#each details.positiveScans as |positiveScan|}}
+            <div>
+                <span class="p-key">{{positiveScan.name}}: </span>
+                <span class="p-value">{{positiveScan.result}}</span>
+            </div>
+        {{/each}}
+    {{else}}
+        <div>
+            <span><em>NONE: No Positive Scan Results Found</em></span>
+        </div>
+    {{/if}}
+{{/if}}
 {{#if (eq details.type 'file')}}
 
     <div class="p-link">
