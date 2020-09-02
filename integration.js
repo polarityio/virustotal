@@ -3,6 +3,7 @@
 const request = require('request');
 const { getRequestOptions } = require('./request-options.js');
 const _ = require('lodash');
+const fp = require('lodash/fp');
 const config = require('./config/config');
 const async = require('async');
 const PendingLookupCache = require('./lib/pending-lookup-cache');
@@ -339,89 +340,34 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
 
       if (_.isArray(body)) {
         body.forEach((item) => {
-          tmpResult = _processHashLookupItem(item, entityLookup, options.showHashesWithNoDetections);
+          tmpResult = _processUrlOrHash(
+            'file',
+            item,
+            entityLookup[item.resource.toLowerCase()],
+            options.showHashesWithNoDetections,
+            options.showNoInfoTag
+          );
           if (tmpResult !== null) {
             hashLookupResults.push(tmpResult);
           }
         });
       } else {
-        tmpResult = _processHashLookupItem(body, entityLookup, options.showHashesWithNoDetections);
+        tmpResult = _processUrlOrHash(
+          'file',
+          body,
+          entityLookup[body.resource.toLowerCase()],
+          options.showHashesWithNoDetections,
+          options.showNoInfoTag
+        );
         if (tmpResult !== null) {
           hashLookupResults.push(tmpResult);
         }
       }
-
+      
       done(null, hashLookupResults);
     });
   });
 }
-
-function _processHashLookupItem(virusTotalResultItem, entityLookupHash, showHashesWithNoDetections) {
-  let entity = entityLookupHash[virusTotalResultItem.resource.toLowerCase()];
-
-  Logger.debug(
-    {
-      entityValue: entity.value,
-      positives: virusTotalResultItem.positives,
-      total: virusTotalResultItem.total,
-      responseCode: virusTotalResultItem.response_code
-    },
-    'Result Item'
-  );
-
-  if (_isHashLookupResultHit(virusTotalResultItem, showHashesWithNoDetections)) {
-    virusTotalResultItem.type = 'file';
-    Logger.debug({ hash: entity.value }, 'Lookup Had Result (Caching Hit)');
-
-    return {
-      entity: entity,
-      data: {
-        summary: [_getSummaryTags(virusTotalResultItem)],
-        details: virusTotalResultItem
-      }
-    };
-  } else if (_isHashLookupMiss(virusTotalResultItem)) {
-    Logger.debug({ hash: entity.value }, 'No Result (Caching Miss)');
-    return {
-      entity: entity,
-      data: null
-    };
-  }
-
-  Logger.debug('Ignoring result due to no positive detections');
-  return null;
-}
-
-function _getSummaryTags(virusTotalResultItem) {
-  return `${virusTotalResultItem.positives} ${BUG_ICON}/ ${virusTotalResultItem.total}`;
-}
-
-function _isHashLookupMiss(virusTotalResultItem) {
-  if (
-    virusTotalResultItem.response_code === 0 ||
-    (virusTotalResultItem.positives === 0 && virusTotalResultItem.total === 0)
-  ) {
-    return true;
-  }
-
-  return false;
-}
-
-/**
- * For there to be a hit the response_code must be 1.  In addition, if the total number of positive
- * detections is 0 then no hit will be returned unless `showHashWithNoDetections` is set to true.
- *
- * @param virusTotalResultItem
- * @param showHashesWithNoDetections
- * @returns {boolean}
- * @private
- */
-function _isHashLookupResultHit(virusTotalResultItem, showHashesWithNoDetections) {
-  return (
-    virusTotalResultItem.response_code === 1 && !(virusTotalResultItem.positives === 0 && showHashesWithNoDetections)
-  );
-}
-
 
 function _lookupUrl(entity, options, done) {
   if (doLookupLogging) 
@@ -446,42 +392,77 @@ function _lookupUrl(entity, options, done) {
         return done(err);
       }
 
-      const lookupResult = _processUrl(
+      const lookupResult = _processUrlOrHash(
+        'url',
         result,
         entity,
-        options.showUrlsWithNoDetections
+        options.showUrlsWithNoDetections,
+        options.showNoInfoTag
       );
-      Logger.trace({lookupResult, result,  body}, "SLKDFJLSD")
+      
       done(null, lookupResult);
     });
   });
 }
 
-const _processUrl = (result, entity, showUrlsWithNoDetections) =>
-  !result.total ||
-  !result.response_code ||
-  (!result.positives && !showUrlsWithNoDetections)
-    ? {
+const _processUrlOrHash = (type, result, entity, showEntitiesWithNoDetections, showNoInfoTag) => {
+    if (
+      !result.total ||
+      !result.response_code ||
+      (!result.positives && !showEntitiesWithNoDetections && !showNoInfoTag)
+    ) {
+      return {
         entity,
         data: null
-      }
-    : {
+      };
+    }
+  
+  if (!result.positives && !showEntitiesWithNoDetections && showNoInfoTag){
+    return {
         entity,
         data: {
-          summary: [`${result.positives} ${BUG_ICON}/ ${result.total}`],
+          summary: ['No Information in VirusTotal'],
           details: {
-            type: 'url',
-            link: result.permalink,
-            positiveScans: _.chain(result.scans)
-              .map((scanResult, scanName) => ({
-                name: scanName,
-                detected: scanResult.detected,
-                result: scanResult.result
-              }))
-              .filter(({ detected }) => detected)
+            noInfoMessage: true
           }
         }
-      };
+      }
+  }
+
+  const scans = _.map(result.scans, (scanResult, scanName) => ({
+    name: scanName,
+    detected: scanResult.detected,
+    result: fp.flow(
+      fp.get('result'),
+      fp.replace(' site', ''),
+      fp.capitalize
+    )(scanResult)
+  }));
+
+  return {
+    entity,
+    data: {
+      summary: [
+        `${result.positives} ${BUG_ICON}/ ${result.total}`,
+        ...fp.flow(
+          fp.filter(fp.get('detected')),
+          fp.slice(0, 3),
+          fp.map(fp.get('result'))
+        )(scans),
+        ...(!result.positives && showNoInfoTag ? ['No Information in VirusTotal'] : [])
+      ],
+      details: {
+        type,
+        link: result.permalink,
+        total: result.total,
+        scan_date: result.scan_date,
+        positives: result.positives,
+        positiveScans: fp.filter(fp.get('detected'))(scans),
+        negativeScans: fp.filter(({ detected }) => !detected)(scans)
+      }
+    }
+  };
+};
 
 function _lookupEntityType(type, entity, options, done) {
   if (doLookupLogging) 
@@ -511,7 +492,7 @@ function _lookupEntityType(type, entity, options, done) {
         result,
         entity,
         lookupResults,
-        options[`show${_.startCase(type)}sWithNoDetections`]
+        options
       );
 
       done(null, lookupResults);
@@ -519,7 +500,13 @@ function _lookupEntityType(type, entity, options, done) {
   });
 }
 
-function _processLookupItem(type, virusTotalResultItem, entity, lookupResults, showEntityWithNoDetections) {
+function _processLookupItem(
+  type,
+  virusTotalResultItem,
+  entity,
+  lookupResults,
+  { showNoInfoTag, ...options }
+) {
   /**
    * asn (string)
    * response_code (integer)
@@ -553,11 +540,14 @@ function _processLookupItem(type, virusTotalResultItem, entity, lookupResults, s
    *      .last_resolved
    *      .hostname || .ip_address
    */
+
+  const showEntityWithNoDetections = options[`show${_.startCase(type)}sWithNoDetections`];
+
   if (virusTotalResultItem.response_code === 1) {
     // Compute the details
     let details = _computeDetails(virusTotalResultItem, type);
 
-    if (details.overallPositives === 0 && !showEntityWithNoDetections) {
+    if (details.overallPositives === 0 && !showEntityWithNoDetections && !showNoInfoTag) {
       // don't show any results if there are no positive detections and the user has not set showEntityWithNoDetections to true
       // We cache as a miss eventhough
       lookupResults.push({
@@ -567,12 +557,31 @@ function _processLookupItem(type, virusTotalResultItem, entity, lookupResults, s
       return lookupResults;
     }
 
-    if (details.numResolutions === 0 && details.overallPositives === 0 && details.overallTotal === 0) {
+    const noStatValues =
+      details.numResolutions === 0 &&
+      details.overallPositives === 0 &&
+      details.overallTotal === 0;
+
+    if (
+      noStatValues &&
+      !showNoInfoTag
+    ) {
       Logger.debug({ [type]: entity.value }, 'No Positive Detections or Resolutions');
       // This was an empty result so we just push a null data value
       lookupResults.push({
         entity,
         data: null
+      });
+    } else if (noStatValues && showNoInfoTag) {
+      Logger.debug({ [type]: entity.value }, 'No Positive Detections or Resolutions');
+      lookupResults.push({
+        entity,
+        data: {
+          summary: ['No Information in VirusTotal'],
+          details: {
+            noInfoMessage: true
+          }
+        }
       });
     } else {
       Logger.debug({ [type]: entity.value }, 'Had Result');

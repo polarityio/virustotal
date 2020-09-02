@@ -1,3 +1,8 @@
+{{#if details.noInfoMessage}}
+    <div>
+        <span class="p-key"><em>No Information in VirusTotal</em></span>
+    </div> 
+{{/if}}
 {{#if (or (eq details.type 'ip') (eq details.type 'domain'))}}
     <div class="p-link">
         {{#if (eq details.type 'ip') }}
@@ -54,124 +59,152 @@
             <span class="p-title">{{fa-icon "laptop" fixedWidth=true}} No Hostname Resolutions Found</span>
         </div>
     {{else}}
-        <div>
-            <span class="p-title">{{fa-icon "laptop" fixedWidth=true}}{{if (eq details.type 'ip') "Hostname" "IP"}} Resolutions ({{numResolutionsShown}} of {{details.numResolutions}})</span>
+        <div class="toggle-header">
+            <span class="p-action" {{action "toggleShowResolutions"}}>
+                {{fa-icon "laptop" fixedWidth=true}} 
+                {{if (eq details.type 'ip') "Hostname" "IP"}}
+                Resolutions ({{numResolutionsShown}} of {{details.numResolutions}})
+                {{fa-icon (if showResolutions "caret-up" "caret-down") fixedWidth=true}}
+            </span>
         </div>
-        <table class="p-table" style="margin-top:10px;">
-            <tbody>
-            {{#each (limit details.resolutions maxResolutionsToShow) as |resolution|}}
-                <tr>
-                    <td>
-                        {{#if (eq details.type 'ip') }}
-                            {{resolution.hostname}}
-                        {{else}}
-                            {{resolution.ip_address}}
-                        {{/if}}
-                        <p>
-                            <b class="muted">Last Resolved</b>: {{moment-format resolution.last_resolved timeZone=timeZone}}
-                        </p>
-                    </td>
-                </tr>
-            {{/each}}
-            </tbody>
-        </table>
+        {{#if showResolutions}}
+            <table class="p-table" style="margin-top:10px;">
+                <tbody>
+                {{#each (limit details.resolutions maxResolutionsToShow) as |resolution|}}
+                    <tr>
+                        <td>
+                            {{#if (eq details.type 'ip') }}
+                                {{resolution.hostname}}
+                            {{else}}
+                                {{resolution.ip_address}}
+                            {{/if}}
+                            <p>
+                                <b class="muted">Last Resolved</b>: {{moment-format resolution.last_resolved timeZone=timeZone}}
+                            </p>
+                        </td>
+                    </tr>
+                {{/each}}
+                </tbody>
+            </table>
+        {{/if}}
     {{/if}}
     {{#if (eq numUrlsShown 0)}}
         <div>
             <span class="p-title">{{fa-icon "globe" fixedWidth=true}} No Detected URLs</span>
         </div>
     {{else}}
-        <div class="p-title">
-            {{fa-icon "globe" fixedWidth=true}} Detected URLs ({{numUrlsShown}} of {{details.detectedUrls.length}})
+        <div class="toggle-header">
+            <span class="p-action" {{action "toggleShowDetectedUrls"}}>
+                {{fa-icon "globe" fixedWidth=true}} 
+                Detected URLs ({{numUrlsShown}} of {{details.detectedUrls.length}})
+                {{fa-icon (if showDetectedUrls "caret-up" "caret-down") fixedWidth=true}}
+            </span>
         </div>
-        <table class="p-table" style="margin-top:5px;">
-            <thead>
-            <tr>
-                <th>Positives</th>
-                <th>URL</th>
-            </tr>
-            </thead>
-            <tbody>
-            {{#each (limit details.detectedUrls maxUrlsToShow) as |url|}}
+        {{#if showDetectedUrls}}
+            <table class="p-table" style="margin-top:5px;">
+                <thead>
                 <tr>
-                    <td class="positives">{{url.positives}} / {{url.total}}</td>
-                    <td>
-                        {{url.url}}
-                        <p>
-                            <b class="muted">Scan Date: </b>{{moment-format url.scan_date timeZone=timeZone}}
-                        </p>
-                    </td>
+                    <th>Positive</th>
+                    <th>URL</th>
                 </tr>
-            {{/each}}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                {{#each (limit details.detectedUrls maxUrlsToShow) as |url|}}
+                    <tr>
+                        <td class="positives">{{url.positives}} / {{url.total}}</td>
+                        <td>
+                            {{url.url}}
+                            <p>
+                                <b class="muted">Scan Date: </b>{{moment-format url.scan_date timeZone=timeZone}}
+                            </p>
+                        </td>
+                    </tr>
+                {{/each}}
+                </tbody>
+            </table>
+        {{/if}}
     {{/if}}
 {{/if}}
-{{#if (eq details.type 'url')}}
+
+{{#if (or (eq details.type 'url') (eq details.type 'file'))}}
     <div class="p-link">
         <a href="{{details.link}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
     </div>
-    <div>
-        <span class="p-title">{{fa-icon "laptop" fixedWidth=true}} Positive Scan Results</span>
+    <div class="indicator">
+        <div class="tic-gauge-container">
+            <svg x="0" y="0" width="30%" height="30%" viewBox="0 0 55 50">
+                <g transform="translate(28,25)">
+                    <g>
+                        <circle r="{{elementRadius}}" stroke="#eee" transform="rotate(-90)" fill="#fff"
+                            stroke-width="{{elementStrokeWidth}}" cx="0" cy="0"></circle>
+                        <circle stroke-dasharray="{{elementCircumference}}" r="{{elementRadius}}" stroke="{{elementColor}}"
+                            transform="rotate(-90)" fill="none" stroke-dashoffset="{{elementStrokeOffset}}"
+                            stroke-width="{{elementStrokeWidth}}" cx="0" cy="0"></circle>
+                        <text text-anchor="middle" x="0" y="0" fill="{{elementColor}}" font-size="13">
+                            {{details.positives}}
+                        </text>
+                        <text text-anchor="middle" x="-1" y="10" fill="gray" font-size="7">
+                            / {{details.total}}
+                        </text>
+                    </g>
+                </g>
+            </svg>
+        </div>
     </div>
-    {{#if details.positiveScans.length}}
-        {{#each details.positiveScans as |positiveScan|}}
-            <div>
-                <span class="p-key">{{positiveScan.name}}: </span>
-                <span class="p-value">{{positiveScan.result}}</span>
-            </div>
-        {{/each}}
-    {{else}}
-        <div>
-            <span><em>NONE: No Positive Scan Results Found</em></span>
+
+    <div>
+        <span class="p-key">Scan Date: </span>
+        <span class="p-value">{{moment-format details.scan_date timeZone=timeZone}}</span>
+    </div>
+
+    <div class="toggle-header">
+        <span class="p-action" {{action "toggleShowScanResults"}}>
+            {{fa-icon "laptop" fixedWidth=true}} 
+            {{if (eq details.type 'url') "URL" "File"}}
+            Report ({{details.positives}} of {{details.total}}) 
+            {{fa-icon (if showScanResults "caret-up" "caret-down") fixedWidth=true}}
+        </span>
+    </div>
+    {{#if showScanResults}}
+        <div class="scan-results">
+            <table>
+                <tbody>
+                    {{#each details.positiveScans as |positiveScan|}}
+                        <tr>
+                            <td>
+                                <span class="p-key">{{positiveScan.name}}: </span>
+                            </td>
+                            <td>
+                                <span class="p-value" style="color: #FF3A59">
+                                    {{fa-icon "exclamation" class="p-red table-icon" fixedWidth=true}}
+                                    {{positiveScan.result}}
+                                </span>
+                            </td>
+                        </tr>
+                    {{/each}}
+                    {{#each details.negativeScans as |negativeScan|}}
+                        <tr>
+                            <td>
+                                <span class="p-key">{{negativeScan.name}}: </span>
+                            </td>
+                            <td>
+                                <span class="p-value">
+                                    {{#if (eq negativeScan.result "Unrated")}}
+                                        {{fa-icon "question" class="p-grey table-icon" fixedWidth=true}}
+                                    {{else}}
+                                        {{fa-icon "check" class="p-green table-icon" fixedWidth=true}}
+                                    {{/if}}
+                                    {{#if (not negativeScan.result)}}
+                                        Undetected
+                                    {{else}}
+                                        {{negativeScan.result}}
+                                    {{/if}}
+                                </span>
+                            </td>
+                        </tr>
+                    {{/each}}
+                </tbody>
+            </table>
         </div>
     {{/if}}
 {{/if}}
-{{#if (eq details.type 'file')}}
-
-    <div class="p-link">
-        <a href="{{details.permalink}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
-    </div>
-    <div>
-        <span class="p-title">{{fa-icon "file" fixedWidth=true}} File Report</span>
-    </div>
-    <div>
-        <span class="p-key">Scan Date:</span>
-        <span class="p-value">{{moment-format details.scan_date timeZone=timeZone}}</span>
-    </div>
-    <div>
-        <span class="p-key">{{details.positives}} positive detections out of {{details.total}}</span>
-    </div>
-
-    <table>
-        <thead>
-            <th></th>
-            <th>Scanner</th>
-            <th>Result</th>
-        </thead>
-        <tbody>
-        {{#each-in details.scans as |key value|}}
-            {{#if (or (and (not value.detected) block.userOptions.showNoDetections) value.detected)}}
-                <tr>
-                    <td style="width:20px">
-                        {{#if value.detected}}
-                            {{fa-icon "bug" class="p-red table-icon" fixedWidth=true}}
-                        {{else}}
-                            {{fa-icon "check" class="p-green table-icon" fixedWidth=true}}
-                        {{/if}}
-                    </td>
-                    <td>{{key}}</td>
-                    <td>
-                        {{#if value.result}}
-                            {{value.result}}
-                        {{else}}
-                            <span class="success">[No Detection]</span>
-                        {{/if}}
-                    </td>
-                </tr>
-            {{/if}}
-        {{/each-in}}
-        </tbody>
-    </table>
-{{/if}}
-

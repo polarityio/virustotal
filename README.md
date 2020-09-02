@@ -4,9 +4,13 @@ Polarity's VirusTotal integration gives users access to automated MD5, SHA1, SHA
 
 VirusTotal is a free service that analyzes suspicious files and URLs and facilitates the quick detection of viruses, worms, trojans, and all kinds of malware.  For more information about VirusTotal and to sign up for a free API key please visit https://www.virustotal.com/.
 
-| ![image](https://user-images.githubusercontent.com/306319/54649711-be923400-4a81-11e9-8bbb-2bfd99bb4394.png) | ![image](https://user-images.githubusercontent.com/306319/54649751-da95d580-4a81-11e9-8d8a-ebf39b97e864.png) |
-|---|---|
-|*VirusTotal Lookup of an MD5 Hash* | *VirusTotal Lookup of an IPv4 Address* |
+<div style="display:flex; justify-content:flex-start; align-items:center;">
+  <img width="366" alt="Integration Example MD5 Hash" src="./assets/integration-example-md5.png" />
+  <img width="400" alt="Integration Example IP Address" src="./assets/integration-example-ip.png" />
+</div>
+<div style="display:flex; justify-content:flex-start; align-items:center;">
+  <img width="366" alt="Integration Example URL" src="./assets/integration-example-url.png" />
+</div>
 
 ## VirusTotal Integration Options
 
@@ -15,6 +19,13 @@ VirusTotal is a free service that analyzes suspicious files and URLs and facilit
 Your VirusTotal API Key (free or commercial)
 
 > Note that the VirusTotal platform throttles lookups that make use of free public API keys to approximately four lookups a minute.
+
+### Show "No Information in VirusTotal"
+
+Default: false
+
+If checked, this option will make it so when there are no results in Virus Total it will always display the tag summary "No Information in VirusTotal".
+
 
 ### Show All File Scanner AV Results
 

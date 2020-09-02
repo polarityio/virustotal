@@ -3,32 +3,98 @@ polarity.export = PolarityComponent.extend({
   timezone: Ember.computed('Intl', function () {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }),
-  maxResolutionsToShow: 10,
-  maxUrlsToShow: 10,
-  numResolutionsShown: Ember.computed('maxResolutionsToShow', 'details.resolutions.length', function () {
-    let maxResolutionsToShow = this.get('maxResolutionsToShow');
-    let totalResolutions = this.get('details.resolutions.length');
+  maxResolutionsToShow: 20,
+  maxUrlsToShow: 20,
+  showScanResults: false,
+  showDetectedUrls: false,
+  showResolutions: false,
+  domainVirusTotalLink: '',
+  ipVirusTotalLink: '',
+  numUrlsShown: 0,
+  numResolutionsShown: 0,
+  redThreat: '#fa5843',
+  greenThreat: '#7dd21b',
+  yellowThreat: '#ffc15d',
+  /**
+   * Radius of the ticScore circle
+   */
+  threatRadius: 15,
+  /**
+   * StrokeWidth of the ticScore circle
+   */
+  threatStrokeWidth: 2,
+  elementRadius: 20,
+  elementStrokeWidth: 4,
 
-    if (maxResolutionsToShow < totalResolutions) {
-      return maxResolutionsToShow;
-    }
-    return totalResolutions;
+  elementColor: Ember.computed('result.domain_risk.risk_score', function () {
+    return this._getThreatColor((this.details.positives / this.details.total) * 100);
   }),
-  numUrlsShown: Ember.computed('maxUrlsToShow', 'details.detectedUrls.length', function () {
-    let maxUrlsToShow = this.get('maxUrlsToShow');
-    let totalUrls = this.get('details.detectedUrls.length');
 
-    if (maxUrlsToShow < totalUrls) {
-      return maxUrlsToShow;
+  elementStrokeOffset: Ember.computed(
+    'result.domain_risk.risk_score',
+    'elementCircumference',
+    function () {
+      return this._getStrokeOffset(this.details.positives, this.elementCircumference);
     }
-    return totalUrls;
+  ),
+
+  threatCircumference: Ember.computed('threatRadius', function () {
+    return 2 * Math.PI * this.get('threatRadius');
   }),
-  ipVirusTotalLink: Ember.computed('block.entity.value', function () {
-    let entityName = this.get('block.entity.value');
-    return 'https://www.virustotal.com/en/ip-address/' + entityName + '/information/';
+
+  elementCircumference: Ember.computed('elementRadius', function () {
+    return 2 * Math.PI * this.get('elementRadius');
   }),
-  domainVirusTotalLink: Ember.computed('block.entity.value', function () {
-    let entityName = this.get('block.entity.value');
-    return 'https://www.virustotal.com/en/domain/' + entityName + '/information/';
-  })
+  _getStrokeOffset(ticScore, circumference) {
+    let progress = ticScore / this.details.total;
+    return circumference * (1 - progress);
+  },
+  _getThreatColor(ticScore) {
+    if (ticScore >= 50) {
+      return this.get('redThreat');
+    } else if (ticScore >= 35) {
+      return this.get('yellowThreat');
+    } else {
+      return this.get('greenThreat');
+    }
+  },
+  init() {
+    this.set('showScanResults', this.get('details.total') < 15);
+    this.set(
+      'domainVirusTotalLink',
+      'https://www.virustotal.com/gui/domain/' +
+        this.get('block.entity.value') +
+        '/relations'
+    );
+    this.set(
+      'ipVirusTotalLink',
+      'https://www.virustotal.com/gui/ip-address/' +
+        this.get('block.entity.value') +
+        '/relations'
+    );
+    this.set(
+      'numUrlsShown',
+      Math.min(this.get('maxUrlsToShow'), this.get('details.detectedUrls.length'))
+    );
+    this.set(
+      'numResolutionsShown',
+      Math.min(this.get('maxResolutionsToShow'), this.get('details.resolutions.length'))
+    );
+
+    this._super(...arguments);
+  },
+  actions: {
+    toggleShowScanResults: function () {
+      this.toggleProperty(`showScanResults`);
+      this.get('block').notifyPropertyChange('data');
+    },
+    toggleShowDetectedUrls: function () {
+      this.toggleProperty(`showDetectedUrls`);
+      this.get('block').notifyPropertyChange('data');
+    },
+    toggleShowResolutions: function () {
+      this.toggleProperty(`showResolutions`);
+      this.get('block').notifyPropertyChange('data');
+    }
+  }
 });

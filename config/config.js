@@ -102,6 +102,16 @@ module.exports = {
       adminOnly: false
     },
     {
+      key: 'showNoInfoTag',
+      name: 'Show "No Information in VirusTotal"',
+      description:
+        'If checked, this option will make it so when there are no results in Virus Total it will always display the tag summary "No Information in VirusTotal".',
+      default: false,
+      type: 'boolean',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
       key: 'showNoDetections',
       name: 'Show All File Scanner AV Results',
       description:
