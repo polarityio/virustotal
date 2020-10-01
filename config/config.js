@@ -22,8 +22,9 @@ module.exports = {
    * @type String
    * @optional
    */
-  description: 'VirusTotal Integration for File and IP Address Reports via the Public API v2.0',
-  entityTypes: ['IPv4', 'hash'],
+  description:
+    'VirusTotal Integration for File and IP Address Reports via the Public API v2.0',
+  entityTypes: ['url', 'domain', 'IPv4', 'hash'],
   /**
    * An array of style files (css or less) that will be included for your integration. Any styles specified in
    * the below files can be used in your custom template.
@@ -73,7 +74,9 @@ module.exports = {
     ca: '',
     // An HTTP proxy to be used. Supports proxy Auth with Basic Auth, identical to support for
     // the url parameter (by embedding the auth info in the uri)
-    proxy: ''
+    proxy: '',
+
+    rejectUnauthorized: true
   },
   logging: {
     level: 'info', //trace, debug, info, warn, error, fatal
@@ -94,7 +97,17 @@ module.exports = {
       name: 'VirusTotal API Key',
       description: 'Your VirusTotal API Key',
       default: '',
-      type: 'text',
+      type: 'password',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
+      key: 'showNoInfoTag',
+      name: 'Show "No Information in VirusTotal"',
+      description:
+        'If checked, this option will make it so when there are no results in Virus Total it will always display the tag summary "No Information in VirusTotal".',
+      default: false,
+      type: 'boolean',
       userCanEdit: true,
       adminOnly: false
     },
@@ -111,7 +124,8 @@ module.exports = {
     {
       key: 'showHashesWithNoDetections',
       name: 'Show Files (Hashes) with No Detections',
-      description: 'If checked, the integration will show results for files that have no positive detections.',
+      description:
+        'If checked, the integration will show results for files that have no positive detections.',
       default: false,
       type: 'boolean',
       userCanEdit: true,
@@ -122,6 +136,26 @@ module.exports = {
       name: 'Show IP Addresses with No Detections',
       description:
         'If checked, the integration will show results for IP addresses that have no positive detections.  By default, the integration will not show IP reports with no positive detections even if the IP address in question has a resolved hostname. ',
+      default: false,
+      type: 'boolean',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
+      key: 'showDomainsWithNoDetections',
+      name: 'Show Domains with No Detections',
+      description:
+        'If checked, the integration will show results for Domains that have no positive detections.',
+      default: false,
+      type: 'boolean',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
+      key: 'showUrlsWithNoDetections',
+      name: 'Show Urls with No Detections',
+      description:
+        'If checked, the integration will show results for Urls that have no positive detections.',
       default: false,
       type: 'boolean',
       userCanEdit: true,
