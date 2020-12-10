@@ -447,7 +447,8 @@ const _processUrlOrHash = (type, result, entity, showEntitiesWithNoDetections, s
         ...fp.flow(
           fp.filter(fp.get('detected')),
           fp.slice(0, 3),
-          fp.map(fp.get('result'))
+          fp.map(fp.get('result')),
+          fp.uniq
         )(scans),
         ...(!result.positives && showNoInfoTag ? ['No Information in VirusTotal'] : [])
       ],
