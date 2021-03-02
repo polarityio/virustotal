@@ -12,7 +12,7 @@ polarity.export = PolarityComponent.extend({
   ipVirusTotalLink: '',
   numUrlsShown: 0,
   numResolutionsShown: 0,
-  redThreat: '#fa5843',
+  redThreat: '#ed2e4d',
   greenThreat: '#7dd21b',
   yellowThreat: '#ffc15d',
   /**

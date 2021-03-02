@@ -2,131 +2,7 @@
     <div>
         <span class="p-key"><em>No Information in VirusTotal</em></span>
     </div> 
-{{/if}}
-{{#if (or (eq details.type 'ip') (eq details.type 'domain'))}}
-    <div class="p-link">
-        {{#if (eq details.type 'ip') }}
-            <a href="{{ipVirusTotalLink}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
-        {{else}}
-            <a href="{{domainVirusTotalLink}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
-        {{/if}}
-    </div>
-    <div>
-        <span class="p-title">{{fa-icon "sun" fixedWidth=true}} Detections</span>
-    </div>
-    <table class="p-table" style="margin-top:5px;">
-        <thead>
-        <th>Detections</th>
-        <th>Positive %</th>
-        <th>Positives {{fa-icon "bug" class="header-icon p-red"}}</th>
-        <th>Total</th>
-        </thead>
-        <tbody>
-        <tr>
-            <td>Overall</td>
-            <td>{{details.overallPercent}}</td>
-            <td>{{details.overallPositives}}</td>
-            <td>{{details.overallTotal}}</td>
-        </tr>
-        <tr>
-            <td>URLs</td>
-            <td>{{details.detectedUrlsPercent}}</td>
-            <td>{{details.detectedUrlsPositive}}</td>
-            <td>{{details.detectedUrlsTotal}}</td>
-        </tr>
-        <tr>
-            <td>Communicating</td>
-            <td>{{details.detectedCommunicatingSamplesPercent}}</td>
-            <td>{{details.detectedCommunicatingSamplesPositive}}</td>
-            <td>{{details.detectedCommunicatingSamplesTotal}}</td>
-        </tr>
-        <tr>
-            <td>Downloaded</td>
-            <td>{{details.detectedDownloadedSamplesPercent}}</td>
-            <td>{{details.detectedDownloadedSamplesPositive}}</td>
-            <td>{{details.detectedDownloadedSamplesTotal}}</td>
-        </tr>
-        <tr>
-            <td>Embedded</td>
-            <td>{{details.detectedReferrerSamplesPercent}}</td>
-            <td>{{details.detectedReferrerSamplesPositive}}</td>
-            <td>{{details.detectedReferrerSamplesTotal}}</td>
-        </tr>
-        </tbody>
-    </table>
-    {{#if (eq numResolutionsShown 0)}}
-        <div>
-            <span class="p-title">{{fa-icon "laptop" fixedWidth=true}} No Hostname Resolutions Found</span>
-        </div>
-    {{else}}
-        <div class="toggle-header">
-            <span class="p-action" {{action "toggleShowResolutions"}}>
-                {{fa-icon "laptop" fixedWidth=true}} 
-                {{if (eq details.type 'ip') "Hostname" "IP"}}
-                Resolutions ({{numResolutionsShown}} of {{details.numResolutions}})
-                {{fa-icon (if showResolutions "caret-up" "caret-down") fixedWidth=true}}
-            </span>
-        </div>
-        {{#if showResolutions}}
-            <table class="p-table" style="margin-top:10px;">
-                <tbody>
-                {{#each (limit details.resolutions maxResolutionsToShow) as |resolution|}}
-                    <tr>
-                        <td>
-                            {{#if (eq details.type 'ip') }}
-                                {{resolution.hostname}}
-                            {{else}}
-                                {{resolution.ip_address}}
-                            {{/if}}
-                            <p>
-                                <b class="muted">Last Resolved</b>: {{moment-format resolution.last_resolved timeZone=timeZone}}
-                            </p>
-                        </td>
-                    </tr>
-                {{/each}}
-                </tbody>
-            </table>
-        {{/if}}
-    {{/if}}
-    {{#if (eq numUrlsShown 0)}}
-        <div>
-            <span class="p-title">{{fa-icon "globe" fixedWidth=true}} No Detected URLs</span>
-        </div>
-    {{else}}
-        <div class="toggle-header">
-            <span class="p-action" {{action "toggleShowDetectedUrls"}}>
-                {{fa-icon "globe" fixedWidth=true}} 
-                Detected URLs ({{numUrlsShown}} of {{details.detectedUrls.length}})
-                {{fa-icon (if showDetectedUrls "caret-up" "caret-down") fixedWidth=true}}
-            </span>
-        </div>
-        {{#if showDetectedUrls}}
-            <table class="p-table" style="margin-top:5px;">
-                <thead>
-                <tr>
-                    <th>Positive</th>
-                    <th>URL</th>
-                </tr>
-                </thead>
-                <tbody>
-                {{#each (limit details.detectedUrls maxUrlsToShow) as |url|}}
-                    <tr>
-                        <td class="positives">{{url.positives}} / {{url.total}}</td>
-                        <td>
-                            {{url.url}}
-                            <p>
-                                <b class="muted">Scan Date: </b>{{moment-format url.scan_date timeZone=timeZone}}
-                            </p>
-                        </td>
-                    </tr>
-                {{/each}}
-                </tbody>
-            </table>
-        {{/if}}
-    {{/if}}
-{{/if}}
-
-{{#if (or (eq details.type 'url') (eq details.type 'file'))}}
+{{else}}
     <div class="p-link">
         <a href="{{details.link}}">View in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
     </div>
@@ -160,8 +36,7 @@
     <div class="toggle-header">
         <span class="p-action" {{action "toggleShowScanResults"}}>
             {{fa-icon "laptop" fixedWidth=true}} 
-            {{if (eq details.type 'url') "URL" "File"}}
-            Report ({{details.positives}} of {{details.total}}) 
+            Detection ({{details.positives}} of {{details.total}}) 
             {{fa-icon (if showScanResults "caret-up" "caret-down") fixedWidth=true}}
         </span>
     </div>
@@ -192,12 +67,28 @@
                                     {{#if (eq negativeScan.result "Unrated")}}
                                         {{fa-icon "question" class="p-grey table-icon" fixedWidth=true}}
                                     {{else}}
-                                        {{fa-icon "check" class="p-green table-icon" fixedWidth=true}}
+                                        {{#if (eq negativeScan.result "type-unsupported")}}
+                                            {{fa-icon "eye-slash" class="p-grey table-icon" fixedWidth=true}}
+                                        {{else}}
+                                            {{#if (eq negativeScan.result "Suspicious")}}
+                                                {{fa-icon "info" class="p-orange table-icon" fixedWidth=true}}
+                                            {{else}}
+                                                {{fa-icon "check" class="p-green table-icon" fixedWidth=true}}
+                                            {{/if}}
+                                        {{/if}}
                                     {{/if}}
-                                    {{#if (not negativeScan.result)}}
-                                        Undetected
+                                    {{#if (eq negativeScan.result "type-unsupported")}}
+                                        <span class="p-grey">Unable to process file type</span>
                                     {{else}}
-                                        {{negativeScan.result}}
+                                        {{#if (eq negativeScan.result "Suspicious")}}
+                                            <span class="p-orange">Suspicious</span>
+                                        {{else}}
+                                            {{#if (not negativeScan.result)}}
+                                                Undetected
+                                            {{else}}
+                                                {{negativeScan.result}}
+                                            {{/if}}
+                                        {{/if}}
                                     {{/if}}
                                 </span>
                             </td>

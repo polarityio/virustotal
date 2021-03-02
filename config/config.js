@@ -23,7 +23,8 @@ module.exports = {
    * @optional
    */
   description:
-    'VirusTotal Integration for File and IP Address Reports via the Public API v2.0',
+    'VirusTotal Integration for File and IP Address Reports via the Public API v3.0',
+  defaultColor: 'light-pink',
   entityTypes: ['url', 'domain', 'IPv4', 'hash'],
   /**
    * An array of style files (css or less) that will be included for your integration. Any styles specified in
