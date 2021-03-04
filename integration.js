@@ -120,7 +120,7 @@ function doLookup(entities, options, cb) {
       pendingLookupCache.addRunningLookup(entity.value);
 
       domainEntities.push(entity);
-    } else if (entity.isURL) { 
+    } else if (entity.isURL) {
       if (doLookupLogging)
         lookupUrlSet.add(entity.value);
 
@@ -322,7 +322,7 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
   if (doLookupLogging) {
     debugLookupStats.hashLookups++;
   }
-  
+
   async.mapLimit(hashesArray, 10, (hashValue, next) => {
     let requestOptions = {
       uri: `${LOOKUP_URI_BY_TYPE.hash}/${hashValue}`,
@@ -335,7 +335,7 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
           Logger.error(err, 'Error Looking up Hash');
           return next(err);
         }
-        
+
 
         const formattedResult = _processLookupItem(
           'file',
@@ -356,7 +356,7 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
 }
 
 function _lookupUrl(entity, options, done) {
-  if (doLookupLogging) 
+  if (doLookupLogging)
     debugLookupStats.urlLookups++;
 
   let requestOptions = {
@@ -405,7 +405,7 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
       data: null
     };
   }
-  
+
   if (!totalMalicious && !showEntitiesWithNoDetections && showNoInfoTag) {
     return {
         entity,
@@ -425,7 +425,7 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
       detected: scanResult.category === 'malicious',
       result:
         !scanResult.result && scanResult.category === 'type-unsupported'
-          ? 'type-unsupported' : 
+          ? 'type-unsupported' :
         ['clean', 'suspicious', 'malware', 'malicious', 'unrated'].includes(
           scanResult.result
         )
@@ -470,7 +470,7 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
 };
 
 function _lookupEntityType(type, entity, options, done) {
-  if (doLookupLogging) 
+  if (doLookupLogging)
     debugLookupStats[`${type}Lookups`]++;
 
   let requestOptions = {
@@ -487,7 +487,7 @@ function _lookupEntityType(type, entity, options, done) {
         Logger.error(err, `Error Looking up ${_.startCase(type)}`);
         return done(err);
       }
-      
+
       let lookupResults =  _processLookupItem(
         type,
         result,
@@ -496,7 +496,7 @@ function _lookupEntityType(type, entity, options, done) {
         options.showNoInfoTag
       );
 
-      
+
       let relationsRefFilesRequestOptions = {
         uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/referrer_files`,
         method: 'GET',
@@ -518,44 +518,44 @@ function _lookupEntityType(type, entity, options, done) {
             }
 
 
-            const referrenceFiles = fp.flow(
+            const referenceFiles = fp.flow(
               fp.getOr([], 'data'),
-              fp.map((referrenceFile) => ({
+              fp.map((referenceFile) => ({
                 link:
-                  referrenceFile.attributes &&
-                  `https://www.virustotal.com/gui/${referrenceFile.type}/${referrenceFile.id}/detection`,
+                  referenceFile.attributes &&
+                  `https://www.virustotal.com/gui/${referenceFile.type}/${referenceFile.id}/detection`,
                 name: fp.getOr(
-                  referrenceFile.id,
+                  referenceFile.id,
                   'attributes.meaningful_name',
-                  referrenceFile
+                  referenceFile
                 ),
                 type: fp.getOr(
-                  referrenceFile.type,
+                  referenceFile.type,
                   'attributes.type_tag',
-                  referrenceFile
+                  referenceFile
                 ),
-                detections: referrenceFile.attributes
+                detections: referenceFile.attributes
                   ? `${fp.getOr(
                       0,
                       'attributes.last_analysis_stats.malicious',
-                      referrenceFile
+                    referenceFile
                     )} / ${fp.getOr(
                       0,
                       'attributes.last_analysis_stats.undetected',
-                      referrenceFile
+                    referenceFile
                     )}`
                   : '-',
                 scannedDate: fp.getOr(
                   '-',
                   'attributes.last_analysis_date',
-                  referrenceFile
+                  referenceFile
                 )
               }))
             )(refFilesResult);
 
             lookupResults.data.details = {
               ...fp.get('data.details', lookupResults),
-              referrenceFiles
+              referenceFiles
             };
 
             let relationsWhoIsRequestOptions = {
@@ -701,7 +701,7 @@ function startup(logger) {
 function _logLookupStats() {
   debugLookupStats.ipCount = lookupIpSet.size;
   debugLookupStats.domainCount = lookupDomainSet.size;
-  debugLookupStats.urlCount = lookupUrlSet.size; 
+  debugLookupStats.urlCount = lookupUrlSet.size;
   debugLookupStats.hashCount = lookupHashSet.size;
 
   Logger.info(debugLookupStats, 'Unique Entity Stats');
@@ -714,11 +714,11 @@ function _logLookupStats() {
     debugLookupStats.hourCount = 0;
     debugLookupStats.hashCount = 0;
     debugLookupStats.ipCount = 0;
-    debugLookupStats.ipLookups = 0; 
+    debugLookupStats.ipLookups = 0;
     debugLookupStats.domainCount = 0;
-    debugLookupStats.domainLookups = 0; 
+    debugLookupStats.domainLookups = 0;
     debugLookupStats.urlCount = 0;
-    debugLookupStats.urlLookups = 0; 
+    debugLookupStats.urlLookups = 0;
     debugLookupStats.hashLookups = 0;
     debugLookupStats.dayCount++;
   } else {
