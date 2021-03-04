@@ -6,12 +6,13 @@ polarity.export = PolarityComponent.extend({
   maxResolutionsToShow: 20,
   maxUrlsToShow: 20,
   showScanResults: false,
-  showDetectedUrls: false,
-  showResolutions: false,
+  showFilesReferring: false,
+  showHistoricalWhois: false,
+  expandedWhoisMap: {},
   domainVirusTotalLink: '',
-  ipVirusTotalLink: '',
   numUrlsShown: 0,
   numResolutionsShown: 0,
+  activeTab: 'detection',
   redThreat: '#ed2e4d',
   greenThreat: '#7dd21b',
   yellowThreat: '#ffc15d',
@@ -61,18 +62,6 @@ polarity.export = PolarityComponent.extend({
   init() {
     this.set('showScanResults', this.get('details.total') < 15);
     this.set(
-      'domainVirusTotalLink',
-      'https://www.virustotal.com/gui/domain/' +
-        this.get('block.entity.value') +
-        '/relations'
-    );
-    this.set(
-      'ipVirusTotalLink',
-      'https://www.virustotal.com/gui/ip-address/' +
-        this.get('block.entity.value') +
-        '/relations'
-    );
-    this.set(
       'numUrlsShown',
       Math.min(this.get('maxUrlsToShow'), this.get('details.detectedUrls.length'))
     );
@@ -84,16 +73,15 @@ polarity.export = PolarityComponent.extend({
     this._super(...arguments);
   },
   actions: {
-    toggleShowScanResults: function () {
-      this.toggleProperty(`showScanResults`);
+    changeTab: function (tabName) {
+      this.set('activeTab', tabName);
+    },
+    toggleShowResults: function (resultType) {
+      this.toggleProperty(resultType);
       this.get('block').notifyPropertyChange('data');
     },
-    toggleShowDetectedUrls: function () {
-      this.toggleProperty(`showDetectedUrls`);
-      this.get('block').notifyPropertyChange('data');
-    },
-    toggleShowResolutions: function () {
-      this.toggleProperty(`showResolutions`);
+    expandWhoIsRow: function (index) {
+      this.set(`expandedWhoisMap.${index}`, !this.get(`expandedWhoisMap.${index}`));
       this.get('block').notifyPropertyChange('data');
     }
   }

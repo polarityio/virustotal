@@ -434,6 +434,8 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
     }))
   )(attributes);
 
+  const coreLink = `https://www.virustotal.com/gui/${fp.replace("_", "-", data.type)}/${data.id}`;
+
   return {
     entity,
     data: {
@@ -449,7 +451,8 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
       ],
       details: {
         type,
-        link: `https://www.virustotal.com/gui/${data.type}/${data.id}/detection`,
+        link: `${coreLink}/detection`,
+        relationsLink: `${coreLink}/relations`,
         total: totalResults,
         scan_date: attributes.last_modification_date,
         positives: totalMalicious,
@@ -476,7 +479,7 @@ function _lookupEntityType(type, entity, options, done) {
     headers: { 'x-apikey': options.apiKey }
   };
 
-  Logger.debug({ requestOptions }, 'Request Options for URL Lookup');
+  Logger.debug({ requestOptions }, 'Request Options for Type detections Lookup');
 
   requestWithDefaults(requestOptions, function (err, response, body) {
     _handleRequestError(err, response, body, options, function(err, result) {
@@ -493,7 +496,114 @@ function _lookupEntityType(type, entity, options, done) {
         options.showNoInfoTag
       );
 
-      done(null, lookupResults);
+      
+      let relationsRefFilesRequestOptions = {
+        uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/referrer_files`,
+        method: 'GET',
+        headers: { 'x-apikey': options.apiKey }
+      };
+
+      Logger.debug(
+        { relationsRefFilesRequestOptions },
+        'Request Options for Type referrer_files Relations Lookup'
+      );
+
+      requestWithDefaults(
+        relationsRefFilesRequestOptions,
+        function (err, response, body) {
+          _handleRequestError(err, response, body, options, function (err, refFilesResult) {
+            if (err) {
+              Logger.error(err, `Error Looking up ${_.startCase(type)}`);
+              return done(err);
+            }
+
+
+            const referrenceFiles = fp.flow(
+              fp.getOr([], 'data'),
+              fp.map((referrenceFile) => ({
+                link:
+                  referrenceFile.attributes &&
+                  `https://www.virustotal.com/gui/${referrenceFile.type}/${referrenceFile.id}/detection`,
+                name: fp.getOr(
+                  referrenceFile.id,
+                  'attributes.meaningful_name',
+                  referrenceFile
+                ),
+                type: fp.getOr(
+                  referrenceFile.type,
+                  'attributes.type_tag',
+                  referrenceFile
+                ),
+                detections: referrenceFile.attributes
+                  ? `${fp.getOr(
+                      0,
+                      'attributes.last_analysis_stats.malicious',
+                      referrenceFile
+                    )} / ${fp.getOr(
+                      0,
+                      'attributes.last_analysis_stats.undetected',
+                      referrenceFile
+                    )}`
+                  : '-',
+                scannedDate: fp.getOr(
+                  '-',
+                  'attributes.last_analysis_date',
+                  referrenceFile
+                )
+              }))
+            )(refFilesResult);
+
+            lookupResults.data.details = {
+              ...fp.get('data.details', lookupResults),
+              referrenceFiles
+            };
+
+            let relationsWhoIsRequestOptions = {
+              uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/historical_whois`,
+              method: 'GET',
+              headers: { 'x-apikey': options.apiKey }
+            };
+
+            Logger.debug(
+              { relationsWhoIsRequestOptions },
+              'Request Options for Type historical_whois Relations Lookup'
+            );
+
+            requestWithDefaults(
+              relationsWhoIsRequestOptions,
+              function (err, response, body) {
+                _handleRequestError(
+                  err,
+                  response,
+                  body,
+                  options,
+                  function (err, whoIsResult) {
+                    if (err) {
+                      Logger.error(err, `Error Looking up ${_.startCase(type)}`);
+                      return done(err);
+                    }
+
+                    const historicalWhoIs = fp.flow(
+                      fp.getOr([], 'data'),
+                      fp.map((whoIsLookup) => ({
+                        last_updated: fp.get('attributes.last_updated', whoIsLookup),
+                        ...fp.get('attributes.whois_map', whoIsLookup)
+                      }))
+                    )(whoIsResult);
+
+                    lookupResults.data.details = {
+                      ...fp.get('data.details', lookupResults),
+                      historicalWhoIs
+                    };
+
+                    done(null, lookupResults);
+                  }
+                );
+              }
+            );
+          });
+        }
+      );
     });
   });
 }
