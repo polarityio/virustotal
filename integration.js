@@ -391,7 +391,11 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
   const data = fp.get('data', result);
   const attributes = fp.get('attributes', data);
   const lastAnalysisStats = fp.get('last_analysis_stats', attributes);
-  const totalResults = fp.flow(fp.values, fp.sum)(lastAnalysisStats)
+  const totalResults = fp.flow(
+    fp.pick(['undetected', 'malicious', 'suspicious', 'harmless']),
+    fp.values,
+    fp.sum
+  )(lastAnalysisStats);
   const totalMalicious = fp.get('malicious', lastAnalysisStats);
 
   if (
@@ -454,7 +458,7 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
         link: `${coreLink}/detection`,
         relationsLink: `${coreLink}/relations`,
         total: totalResults,
-        scan_date: attributes.last_modification_date,
+        scan_date: new Date(attributes.last_modification_date * 1000),
         positives: totalMalicious,
         positiveScans: fp.flow(
           fp.filter(fp.get('detected')),
@@ -496,6 +500,7 @@ function _lookupEntityType(type, entity, options, done) {
         options.showNoInfoTag
       );
 
+      if(!fp.get('data.details', lookupResults)) return done();
 
       let relationsRefFilesRequestOptions = {
         uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/referrer_files`,
@@ -516,47 +521,47 @@ function _lookupEntityType(type, entity, options, done) {
               Logger.error(err, `Error Looking up ${_.startCase(type)}`);
               return done(err);
             }
-
-
-            const referenceFiles = fp.flow(
-              fp.getOr([], 'data'),
-              fp.map((referenceFile) => ({
-                link:
-                  referenceFile.attributes &&
-                  `https://www.virustotal.com/gui/${referenceFile.type}/${referenceFile.id}/detection`,
-                name: fp.getOr(
-                  referenceFile.id,
-                  'attributes.meaningful_name',
-                  referenceFile
-                ),
-                type: fp.getOr(
-                  referenceFile.type,
-                  'attributes.type_tag',
-                  referenceFile
-                ),
-                detections: referenceFile.attributes
-                  ? `${fp.getOr(
-                      0,
-                      'attributes.last_analysis_stats.malicious',
+            
+            if (refFilesResult.data){
+              const referenceFiles = fp.flow(
+                fp.getOr([], 'data'),
+                fp.map((referenceFile) => ({
+                  link:
+                    referenceFile.attributes &&
+                    `https://www.virustotal.com/gui/${referenceFile.type}/${referenceFile.id}/detection`,
+                  name: fp.getOr(
+                    referenceFile.id,
+                    'attributes.meaningful_name',
                     referenceFile
-                    )} / ${fp.getOr(
-                      0,
-                      'attributes.last_analysis_stats.undetected',
+                  ),
+                  type: fp.getOr(
+                    referenceFile.type,
+                    'attributes.type_tag',
                     referenceFile
-                    )}`
-                  : '-',
-                scannedDate: fp.getOr(
-                  '-',
-                  'attributes.last_analysis_date',
-                  referenceFile
-                )
-              }))
-            )(refFilesResult);
+                  ),
+                  detections: referenceFile.attributes
+                    ? `${fp.getOr(
+                        0,
+                        'attributes.last_analysis_stats.malicious',
+                        referenceFile
+                      )} / ${fp.getOr(
+                        0,
+                        'attributes.last_analysis_stats.undetected',
+                        referenceFile
+                      )}`
+                    : '-',
+                  scannedDate: fp.flow(
+                    fp.getOr('-', 'attributes.last_analysis_date'),
+                    (x) => new Date(x * 1000)
+                  )(referenceFile)
+                }))
+              )(refFilesResult);
 
-            lookupResults.data.details = {
-              ...fp.get('data.details', lookupResults),
-              referenceFiles
-            };
+              lookupResults.data.details = {
+                ...fp.get('data.details', lookupResults),
+                referenceFiles
+              };
+            }
 
             let relationsWhoIsRequestOptions = {
               uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/historical_whois`,
@@ -583,19 +588,26 @@ function _lookupEntityType(type, entity, options, done) {
                       return done(err);
                     }
 
-                    const historicalWhoIs = fp.flow(
-                      fp.getOr([], 'data'),
-                      fp.map((whoIsLookup) => ({
-                        last_updated: fp.get('attributes.last_updated', whoIsLookup),
-                        ...fp.get('attributes.whois_map', whoIsLookup)
-                      }))
-                    )(whoIsResult);
+                    if (whoIsResult.data) {
+                      const historicalWhoIs = fp.flow(
+                        fp.getOr([], 'data'),
+                        fp.map((whoIsLookup) => ({
+                          last_updated: fp.flow(
+                            fp.get('attributes.last_updated'),
+                            (x) => new Date(x * 1000)
+                          )(whoIsLookup),
+                          ...fp.get('attributes.whois_map', whoIsLookup)
+                        }))
+                      )(whoIsResult);
 
-                    lookupResults.data.details = {
-                      ...fp.get('data.details', lookupResults),
-                      historicalWhoIs
-                    };
+                      lookupResults.data.details = {
+                        ...fp.get('data.details', lookupResults),
+                        historicalWhoIs
+                      };
+                    }
 
+
+                    Logger.trace({ lookupResults }, 'lookupResults');
                     done(null, lookupResults);
                   }
                 );

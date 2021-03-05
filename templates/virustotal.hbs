@@ -46,7 +46,7 @@
         </div>
         <div>
             <span class="p-key">Scan Date: </span>
-            <span class="p-value">{{moment-format details.scan_date timeZone=timeZone}}</span>
+            <span class="p-value">{{moment-format details.scan_date "YYYY-MM-DD HH:mm:ss UTC"}}</span>
         </div>
 
         <div class="toggle-header">
@@ -162,7 +162,7 @@
                                     {{#if (eq referrenceFile.scannedDate "-")}}
                                         -
                                     {{else}}
-                                        {{moment-format referrenceFile.scannedDate}}
+                                        {{moment-format referrenceFile.scannedDate "YYYY-MM-DD HH:mm:ss UTC"}}
                                     {{/if}}
                                 </span>
                             </div>
@@ -201,7 +201,7 @@
                                         {{fa-icon (if (get expandedWhoisMap index) "caret-up" "caret-down") fixedWidth=true}}
                                     </td>
                                     <td>
-                                        <span class="p-key">{{moment-format whoisRow.last_updated}}</span>
+                                        <span class="p-key">{{moment-format whoisRow.last_updated "YYYY-MM-DD HH:mm:ss UTC"}}</span>
                                     </td>
                                     <td>
                                         <span class="p-value">
@@ -287,7 +287,7 @@
                                 {{#if (get whoisRow "Updated Date")}}
                                     <div>
                                         <span class="p-key">Updated Date:</span>
-                                        <span class="p-value">{{moment-format (get whoisRow "Updated Date")}}</span>
+                                        <span class="p-value">{{moment-format (get whoisRow "Updated Date") "YYYY-MM-DD HH:mm:ss UTC"}}</span>
                                     </div>
                                 {{/if}}
 
