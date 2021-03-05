@@ -51,10 +51,8 @@ polarity.export = PolarityComponent.extend({
     return circumference * (1 - progress);
   },
   _getThreatColor(ticScore) {
-    if (ticScore >= 50) {
+    if (ticScore > 0) {
       return this.get('redThreat');
-    } else if (ticScore >= 35) {
-      return this.get('yellowThreat');
     } else {
       return this.get('greenThreat');
     }
