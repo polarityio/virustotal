@@ -4,10 +4,12 @@ const request = require('request');
 const _ = require('lodash');
 const fp = require('lodash/fp');
 const map = require('lodash/fp/map').convert({ cap: false });
+const reduce = require('lodash/fp/reduce').convert({ cap: false });
 const config = require('./config/config');
 const async = require('async');
 const PendingLookupCache = require('./lib/pending-lookup-cache');
 const fs = require('fs');
+
 
 let Logger;
 let pendingLookupCache;
@@ -440,6 +442,8 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
 
   const coreLink = `https://www.virustotal.com/gui/${fp.replace("_", "-", data.type)}/${data.id}`;
 
+  const detailsTab = getDetailFields(DETAILS_FORMATS[type], attributes);
+
   return {
     entity,
     data: {
@@ -455,8 +459,9 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
       ],
       details: {
         type,
-        link: `${coreLink}/detection`,
+        detectionsLink: `${coreLink}/detection`,
         relationsLink: `${coreLink}/relations`,
+        detailsLink: `${coreLink}/details`,
         total: totalResults,
         scan_date: new Date(attributes.last_modification_date * 1000),
         positives: totalMalicious,
@@ -467,11 +472,122 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
         negativeScans: fp.flow(
           fp.filter(({ detected }) => !detected),
           fp.orderBy('result', 'desc')
-        )(scans)
+        )(scans),
+        detailsTab,
+        tags: attributes.tags,
       }
     }
   };
 };
+
+const DETAILS_FORMATS = {
+  file: [
+    { key: 'Basic Properties', isTitle: true },
+    { key: 'File type', path: 'type_description' },
+    {
+      key: 'File size',
+      path: 'size',
+      transformation: (size) => `${~~(size / 1049295 / 0.01) * 0.01} MB (${size} bytes)`
+    },
+    { key: 'MD5', path: 'md5' },
+    { key: 'SHA-1', path: 'sha1' },
+    { key: 'SHA-256', path: 'sha256' },
+    { key: 'Vhash', path: 'vhash' },
+    { key: 'Authentihash', path: 'authentihash' },
+    { key: 'Imphash', path: 'pe_info.imphash' },
+    { key: 'Rich PE header hash', path: 'pe_info.rich_pe_header_hash' },
+    { key: 'SSDEEP', path: 'ssdeep' },
+    { key: 'TLSH', path: 'tlsh' },
+    { key: 'Magic', path: 'magic' },
+    {
+      key: 'TrID',
+      path: 'trid',
+      isList: true,
+      transformation: fp.map((trid) => `${trid.file_type} (${trid.probability}%)`)
+    },
+    { key: 'PEiD', path: 'packers.PEiD' }
+  ],
+  url: [
+    { key: 'Basic Properties', isTitle: true },
+    { key: 'Final URL', path: 'last_final_url' },
+    { key: 'Status Code', path: 'last_http_response_code' },
+    {
+      key: 'Body Length',
+      path: 'last_http_response_content_length',
+      transformation: (size) => `${size} B`
+    },
+    { key: 'Body SHA-256', path: 'last_http_response_content_sha256' },
+    {
+      key: 'Categories',
+      path: 'categories',
+      isObject: true
+    },
+    {
+      key: 'Headers',
+      path: 'last_http_response_headers',
+      isObject: true
+    }
+  ],
+  domain: [
+    { key: 'Basic Properties', isTitle: true },
+    { key: 'Registrar', path: 'registrar' },
+    {
+      key: 'Last DNS Records',
+      path: 'last_dns_records',
+      isObject: true,
+      transformation: fp.reduce(
+        (agg, record) => ({
+          ...agg,
+          [`Type - ${record.type}`]: `${record.value} (TTL ${record.ttl})`
+        }),
+        {}
+      )
+    },
+    {
+      key: 'Categories',
+      path: 'categories',
+      isObject: true
+    }
+  ],
+  ip: [
+    { key: 'Basic Properties', isTitle: true },
+    { key: 'Network', path: 'network' },
+    { key: 'Autonomous System Number', path: 'asn' },
+    { key: 'Autonomous System Label', path: 'as_owner' },
+    { key: 'Regional Internet Registry', path: 'regional_internet_registry' },
+    { key: 'Country', path: 'country' },
+    { key: 'Continent', path: 'continent' }
+  ]
+};
+
+const getDetailFields = (detailFields, attributes) =>
+  fp.map((detailField) => {
+    const value = fp.get(detailField.path, attributes);
+    const transformedValue = detailField.transformation
+      ? detailField.transformation(value)
+      : value;
+    
+    const transformedValueWithCorrectKeys = detailField.isObject
+      ? reduce(
+          (agg, value, key) => ({ ...agg, [fp.replace('.', ',', key)]: value }),
+          {},
+          transformedValue
+        )
+      : transformedValue;
+
+    return {
+      ...detailField,
+      ...(value && {
+        value: transformedValueWithCorrectKeys
+      }),
+      ...(detailField.isObject &&
+        fp.size(transformedValueWithCorrectKeys) && {
+          fieldNames: fp.keys(transformedValueWithCorrectKeys)
+        })
+    };
+  }, detailFields);
+
+
 
 function _lookupEntityType(type, entity, options, done) {
   if (doLookupLogging)
@@ -502,120 +618,7 @@ function _lookupEntityType(type, entity, options, done) {
 
       if(!fp.get('data.details', lookupResults)) return done();
 
-      let relationsRefFilesRequestOptions = {
-        uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/referrer_files`,
-        method: 'GET',
-        headers: { 'x-apikey': options.apiKey }
-      };
-
-      Logger.debug(
-        { relationsRefFilesRequestOptions },
-        'Request Options for Type referrer_files Relations Lookup'
-      );
-
-      requestWithDefaults(
-        relationsRefFilesRequestOptions,
-        function (err, response, body) {
-          _handleRequestError(err, response, body, options, function (err, refFilesResult) {
-            if (err) {
-              Logger.error(err, `Error Looking up ${_.startCase(type)}`);
-              return done(err);
-            }
-            
-            if (refFilesResult.data){
-              const referenceFiles = fp.flow(
-                fp.getOr([], 'data'),
-                fp.map((referenceFile) => ({
-                  link:
-                    referenceFile.attributes &&
-                    `https://www.virustotal.com/gui/${referenceFile.type}/${referenceFile.id}/detection`,
-                  name: fp.getOr(
-                    referenceFile.id,
-                    'attributes.meaningful_name',
-                    referenceFile
-                  ),
-                  type: fp.getOr(
-                    referenceFile.type,
-                    'attributes.type_tag',
-                    referenceFile
-                  ),
-                  detections: referenceFile.attributes
-                    ? `${fp.getOr(
-                        0,
-                        'attributes.last_analysis_stats.malicious',
-                        referenceFile
-                      )} / ${fp.getOr(
-                        0,
-                        'attributes.last_analysis_stats.undetected',
-                        referenceFile
-                      )}`
-                    : '-',
-                  scannedDate: fp.flow(
-                    fp.getOr('-', 'attributes.last_analysis_date'),
-                    (x) => new Date(x * 1000)
-                  )(referenceFile)
-                }))
-              )(refFilesResult);
-
-              lookupResults.data.details = {
-                ...fp.get('data.details', lookupResults),
-                referenceFiles
-              };
-            }
-
-            let relationsWhoIsRequestOptions = {
-              uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/historical_whois`,
-              method: 'GET',
-              headers: { 'x-apikey': options.apiKey }
-            };
-
-            Logger.debug(
-              { relationsWhoIsRequestOptions },
-              'Request Options for Type historical_whois Relations Lookup'
-            );
-
-            requestWithDefaults(
-              relationsWhoIsRequestOptions,
-              function (err, response, body) {
-                _handleRequestError(
-                  err,
-                  response,
-                  body,
-                  options,
-                  function (err, whoIsResult) {
-                    if (err) {
-                      Logger.error(err, `Error Looking up ${_.startCase(type)}`);
-                      return done(err);
-                    }
-
-                    if (whoIsResult.data) {
-                      const historicalWhoIs = fp.flow(
-                        fp.getOr([], 'data'),
-                        fp.map((whoIsLookup) => ({
-                          last_updated: fp.flow(
-                            fp.get('attributes.last_updated'),
-                            (x) => new Date(x * 1000)
-                          )(whoIsLookup),
-                          ...fp.get('attributes.whois_map', whoIsLookup)
-                        }))
-                      )(whoIsResult);
-
-                      lookupResults.data.details = {
-                        ...fp.get('data.details', lookupResults),
-                        historicalWhoIs
-                      };
-                    }
-
-
-                    Logger.trace({ lookupResults }, 'lookupResults');
-                    done(null, lookupResults);
-                  }
-                );
-              }
-            );
-          });
-        }
-      );
+      done(null, lookupResults);
     });
   });
 }
@@ -656,6 +659,113 @@ function _createJsonErrorObject(msg, pointer, httpCode, code, title, meta) {
 
   return error;
 }
+
+function onDetails(lookupObject, options, cb) {
+  const entity = fp.get('entity', lookupObject);
+  if (fp.get('entity.isIP', lookupObject) || fp.get('entity.isDomain', lookupObject)) {
+    const type = fp.get('entity.isIP', lookupObject) ? 'ip' : 'domain';
+
+    let relationsRefFilesRequestOptions = {
+      uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/referrer_files`,
+      method: 'GET',
+      headers: { 'x-apikey': options.apiKey }
+    };
+  
+    Logger.debug(
+      { relationsRefFilesRequestOptions },
+      'Request Options for Type referrer_files Relations Lookup'
+    );
+  
+    requestWithDefaults(relationsRefFilesRequestOptions, function (err, response, body) {
+      _handleRequestError(err, response, body, options, function (err, refFilesResult) {
+        if (err) {
+          Logger.error(err, `Error Looking up ${_.startCase(type)}`);
+          return done(err);
+        }
+  
+        if (refFilesResult.data) {
+          const referenceFiles = fp.flow(
+            fp.getOr([], 'data'),
+            fp.map((referenceFile) => ({
+              link:
+                referenceFile.attributes &&
+                `https://www.virustotal.com/gui/${referenceFile.type}/${referenceFile.id}/detection`,
+              name: fp.getOr(referenceFile.id, 'attributes.meaningful_name', referenceFile),
+              type: fp.getOr(referenceFile.type, 'attributes.type_tag', referenceFile),
+              detections: referenceFile.attributes
+                ? `${fp.getOr(
+                    0,
+                    'attributes.last_analysis_stats.malicious',
+                    referenceFile
+                  )} / ${fp.getOr(
+                    0,
+                    'attributes.last_analysis_stats.undetected',
+                    referenceFile
+                  )}`
+                : '-',
+              scannedDate: fp.flow(
+                fp.getOr('-', 'attributes.last_analysis_date'),
+                (x) => new Date(x * 1000)
+              )(referenceFile)
+            }))
+          )(refFilesResult);
+            
+          lookupObject.data.details = {
+            ...fp.get('data.details', lookupObject),
+            expandedWhoisMap: {},
+            referenceFiles
+          };
+        }
+  
+        let relationsWhoIsRequestOptions = {
+          uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/historical_whois`,
+          method: 'GET',
+          headers: { 'x-apikey': options.apiKey }
+        };
+  
+        Logger.debug(
+          { relationsWhoIsRequestOptions },
+          'Request Options for Type historical_whois Relations Lookup'
+        );
+  
+        requestWithDefaults(relationsWhoIsRequestOptions, function (err, response, body) {
+          _handleRequestError(err, response, body, options, function (err, whoIsResult) {
+            if (err) {
+              Logger.error(err, `Error Looking up ${_.startCase(type)}`);
+              return done(err);
+            }
+  
+            if (whoIsResult.data) {
+              const historicalWhoIs = fp.flow(
+                fp.getOr([], 'data'),
+                fp.map((whoIsLookup) => ({
+                  last_updated: fp.flow(
+                    fp.get('attributes.last_updated'),
+                    (x) => new Date(x * 1000)
+                  )(whoIsLookup),
+                  ...fp.get('attributes.whois_map', whoIsLookup)
+                }))
+              )(whoIsResult);
+  
+              lookupObject.data.details = {
+                ...fp.get('data.details', lookupObject),
+                expandedWhoisMap: {},
+                historicalWhoIs
+              };
+            }
+  
+            Logger.trace({ lookupObject }, 'lookupObject');
+            cb(null, lookupObject.data);
+          });
+        });
+      });
+    });
+  } else {
+    return cb(null, lookupObject.data)
+  }
+
+}
+
 
 function startup(logger) {
   Logger = logger;
@@ -754,7 +864,8 @@ function validateOptions(userOptions, cb) {
 }
 
 module.exports = {
-  doLookup: doLookup,
-  startup: startup,
-  validateOptions: validateOptions
+  doLookup,
+  onDetails,
+  startup,
+  validateOptions
 };
