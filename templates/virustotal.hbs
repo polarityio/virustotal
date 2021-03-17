@@ -147,7 +147,7 @@
         {{#if details.detailsTab.length}}
             {{#each details.detailsTab as |detailsField|}}
                 {{#if detailsField.isObject}}
-                    <h1 class="p-title">{{detailsField.key}}</h1>
+                    <h1 class="p-title">{{fa-icon icon="th-list" fixedWidth=true}} {{detailsField.key}}</h1>
                     {{#each-in detailsField.value as |key value|}}
                       {{#if value}}
                         <div>
@@ -168,7 +168,7 @@
                         {{/each}}
                     {{else}}
                         {{#if detailsField.isTitle}}
-                            <h1 class="p-title">{{detailsField.key}}</h1>
+                            <h1 class="p-title">{{fa-icon icon="th-list" fixedWidth=true}} {{detailsField.key}}</h1>
                         {{else}}
                           {{#if detailsField.value}}
                             <div>
