@@ -80,7 +80,7 @@ module.exports = {
     rejectUnauthorized: true
   },
   logging: {
-    level: 'info', //trace, debug, info, warn, error, fatal
+    level: 'trace', //trace, debug, info, warn, error, fatal
     // Special flag to log per hour unique hash and ip counts to the log file
     // Counts are reset every 24 hours
     logLookupStats: false
@@ -154,9 +154,9 @@ module.exports = {
     },
     {
       key: 'showUrlsWithNoDetections',
-      name: 'Show Urls with No Detections',
+      name: 'Show URLs with No Detections',
       description:
-        'If checked, the integration will show results for Urls that have no positive detections.',
+        'If checked, the integration will show results for URLs that have no positive detections.',
       default: false,
       type: 'boolean',
       userCanEdit: true,
