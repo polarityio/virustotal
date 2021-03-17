@@ -5,11 +5,11 @@ Polarity's VirusTotal integration gives users access to automated MD5, SHA1, SHA
 VirusTotal is a free service that analyzes suspicious files and URLs and facilitates the quick detection of viruses, worms, trojans, and all kinds of malware.  For more information about VirusTotal and to sign up for a free API key please visit https://www.virustotal.com/.
 
 <div style="display:flex; justify-content:flex-start; align-items:center;">
-  <img width="366" alt="Integration Example MD5 Hash" src="./assets/integration-example-md5.png" />
-  <img width="400" alt="Integration Example IP Address" src="./assets/integration-example-ip.png" />
+  <img width="366" alt="Integration Example URL" src="./assets/integration-example-url.png" />
+  <img width="350" alt="Integration Example MD5 Hash" src="./assets/integration-example-md5.png" />
 </div>
 <div style="display:flex; justify-content:flex-start; align-items:center;">
-  <img width="366" alt="Integration Example URL" src="./assets/integration-example-url.png" />
+  <img width="364" alt="Integration Example IP Address" src="./assets/integration-example-ip.png" />
 </div>
 
 ## VirusTotal Integration Options
