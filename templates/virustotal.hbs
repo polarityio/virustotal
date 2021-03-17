@@ -1,7 +1,7 @@
 {{#if details.noInfoMessage}}
     <div>
         <span class="p-key"><em>No Information in VirusTotal</em></span>
-    </div> 
+    </div>
 {{else}}
     <div class="top-section">
         <div class="indicator">
@@ -28,7 +28,7 @@
         {{#if details.tags.length}}
             <div class="tags-container">
                 <h1 class="p-title">
-                    {{fa-icon "tags" fixedWidth=true}} 
+                    {{fa-icon "tags" fixedWidth=true}}
                     Tags
                 </h1>
                 <div class="tags">
@@ -42,7 +42,7 @@
         {{/if}}
     </div>
 
-    <ul class="nav nav-tabs">
+    <ul class="nav nav-tabs mt-2">
         <li class="nav-item">
             <a {{action "changeTab" "detection"}} class="nav-link {{if (or (eq activeTab "detection")(not activeTab)) "active"}}" href="#">
                 Detection
@@ -75,8 +75,8 @@
 
         <div class="toggle-header">
             <span class="p-action" {{action "toggleShowResults" "showScanResults"}}>
-                {{fa-icon "laptop" fixedWidth=true}} 
-                Scan Results ({{details.positives}} of {{details.total}}) 
+                {{fa-icon "laptop" fixedWidth=true}}
+                Scan Results ({{details.positives}} of {{details.total}})
                 {{fa-icon (if showScanResults "caret-up" "caret-down") fixedWidth=true}}
             </span>
         </div>
@@ -87,7 +87,7 @@
                         {{#each details.positiveScans as |positiveScan|}}
                             <tr>
                                 <td>
-                                    <span class="p-key">{{positiveScan.name}}: </span>
+                                    <span class="p-key">{{positiveScan.name}} </span>
                                 </td>
                                 <td>
                                     <span class="p-value" style="color: #FF3A59">
@@ -100,7 +100,7 @@
                         {{#each details.negativeScans as |negativeScan|}}
                             <tr>
                                 <td>
-                                    <span class="p-key">{{negativeScan.name}}: </span>
+                                    <span class="p-key">{{negativeScan.name}} </span>
                                 </td>
                                 <td>
                                     <span class="p-value">
@@ -139,7 +139,7 @@
             </div>
         {{/if}}
     {{/if}}
-    
+
     {{#if (eq activeTab "details")}}
         <div class="p-link">
             <a href="{{details.detailsLink}}">View Details in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
@@ -148,35 +148,41 @@
             {{#each details.detailsTab as |detailsField|}}
                 {{#if detailsField.isObject}}
                     <h1 class="p-title">{{detailsField.key}}</h1>
-                    {{#each detailsField.fieldNames as |fieldName|}}
+                    {{#each-in detailsField.value as |key value|}}
+                      {{#if value}}
                         <div>
-                            <span class="p-key">{{fieldName}}:</span>
-                            <span class="p-value">{{get detailsField.value fieldName}}</span>
+                            <span class="p-key">{{key}}:</span>
+                            <span class="p-value">{{value}}</span>
                         </div>
-                    {{/each}}
+                      {{/if}}
+                    {{/each-in}}
                 {{else}}
                     {{#if detailsField.isList}}
                         {{#each detailsField.value as |value|}}
+                          {{#if value}}
                             <div>
                                 <span class="p-key">{{detailsField.key}}:</span>
                                 <span class="p-value">{{value}}</span>
                             </div>
+                          {{/if}}
                         {{/each}}
                     {{else}}
                         {{#if detailsField.isTitle}}
                             <h1 class="p-title">{{detailsField.key}}</h1>
                         {{else}}
+                          {{#if detailsField.value}}
                             <div>
                                 <span class="p-key">{{detailsField.key}}:</span>
                                 <span class="p-value">{{detailsField.value}}</span>
                             </div>
+                          {{/if}}
                         {{/if}}
                     {{/if}}
                 {{/if}}
             {{/each}}
         {{/if}}
     {{/if}}
-    
+
     {{#if (eq activeTab "relations")}}
         <div class="p-link">
             <a href="{{details.relationsLink}}">View Relations in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
@@ -184,7 +190,7 @@
         {{#if details.referenceFiles.length}}
             <div class="toggle-header">
                 <span class="p-action" {{action "toggleShowResults" "showFilesReferring"}}>
-                    {{fa-icon "project-diagram" fixedWidth=true}} 
+                    {{fa-icon "project-diagram" fixedWidth=true}}
                     Files Referring ({{details.referenceFiles.length}})
                     {{fa-icon (if showFilesReferring "caret-up" "caret-down") fixedWidth=true}}
                 </span>
@@ -237,7 +243,7 @@
         {{#if details.historicalWhoIs.length}}
             <div class="toggle-header">
                 <span class="p-action" {{action "toggleShowResults" "showHistoricalWhois"}}>
-                    {{fa-icon "project-diagram" fixedWidth=true}} 
+                    {{fa-icon "project-diagram" fixedWidth=true}}
                     Historical Whois Lookups ({{details.historicalWhoIs.length}})
                     {{fa-icon (if showHistoricalWhois "caret-up" "caret-down") fixedWidth=true}}
                 </span>

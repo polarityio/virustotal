@@ -10,7 +10,6 @@ const async = require('async');
 const PendingLookupCache = require('./lib/pending-lookup-cache');
 const fs = require('fs');
 
-
 let Logger;
 let pendingLookupCache;
 
@@ -35,7 +34,6 @@ const debugLookupStats = {
   hashLookups: 0
 };
 
-
 const throttleCache = new Map();
 
 const BUG_ICON = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bug" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="svg-inline--fa fa-bug fa-w-16"><path fill="currentColor" d="M511.988 288.9c-.478 17.43-15.217 31.1-32.653 31.1H424v16c0 21.864-4.882 42.584-13.6 61.145l60.228 60.228c12.496 12.497 12.496 32.758 0 45.255-12.498 12.497-32.759 12.496-45.256 0l-54.736-54.736C345.886 467.965 314.351 480 280 480V236c0-6.627-5.373-12-12-12h-24c-6.627 0-12 5.373-12 12v244c-34.351 0-65.886-12.035-90.636-32.108l-54.736 54.736c-12.498 12.497-32.759 12.496-45.256 0-12.496-12.497-12.496-32.758 0-45.255l60.228-60.228C92.882 378.584 88 357.864 88 336v-16H32.666C15.23 320 .491 306.33.013 288.9-.484 270.816 14.028 256 32 256h56v-58.745l-46.628-46.628c-12.496-12.497-12.496-32.758 0-45.255 12.498-12.497 32.758-12.497 45.256 0L141.255 160h229.489l54.627-54.627c12.498-12.497 32.758-12.497 45.256 0 12.496 12.497 12.496 32.758 0 45.255L424 197.255V256h56c17.972 0 32.484 14.816 31.988 32.9zM257 0c-61.856 0-112 50.144-112 112h224C369 50.144 318.856 0 257 0z" class=""></path></svg>`;
@@ -43,7 +41,6 @@ const BUG_ICON = `<svg aria-hidden="true" focusable="false" data-prefix="fas" da
 const GLOBE_ICON = `<svg viewBox="0 0 496 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" data-icon="globe" data-prefix="fas" id="ember882" class="svg-inline--fa fa-globe fa-w-16 fa-fw  undefined ember-view"><path fill="currentColor" d="M336.5 160C322 70.7 287.8 8 248 8s-74 62.7-88.5 152h177zM152 256c0 22.2 1.2 43.5 3.3 64h185.3c2.1-20.5 3.3-41.8 3.3-64s-1.2-43.5-3.3-64H155.3c-2.1 20.5-3.3 41.8-3.3 64zm324.7-96c-28.6-67.9-86.5-120.4-158-141.6 24.4 33.8 41.2 84.7 50 141.6h108zM177.2 18.4C105.8 39.6 47.8 92.1 19.3 160h108c8.7-56.9 25.5-107.8 49.9-141.6zM487.4 192H372.7c2.1 21 3.3 42.5 3.3 64s-1.2 43-3.3 64h114.6c5.5-20.5 8.6-41.8 8.6-64s-3.1-43.5-8.5-64zM120 256c0-21.5 1.2-43 3.3-64H8.6C3.2 212.5 0 233.8 0 256s3.2 43.5 8.6 64h114.6c-2-21-3.2-42.5-3.2-64zm39.5 96c14.5 89.3 48.7 152 88.5 152s74-62.7 88.5-152h-177zm159.3 141.6c71.4-21.2 129.4-73.7 158-141.6h-108c-8.8 56.9-25.6 107.8-50 141.6zM19.3 352c28.6 67.9 86.5 120.4 158 141.6-24.4-33.8-41.2-84.7-50-141.6h-108z"></path></svg>`;
 
 const IGNORED_IPS = new Set(['127.0.0.1', '255.255.255.255', '0.0.0.0']);
-
 
 const LOOKUP_URI_BY_TYPE = {
   ip: 'https://www.virustotal.com/api/v3/ip_addresses',
@@ -87,7 +84,7 @@ function doLookup(entities, options, cb) {
   Logger.trace(entities);
   const MAX_HASHES_PER_GROUP = options.isPrivateApi ? 25 : 4;
 
-  entities.forEach(function(entity) {
+  entities.forEach(function (entity) {
     if (pendingLookupCache.isRunning(entity.value))
       return pendingLookupCache.addPendingLookup(entity.value, cb);
 
@@ -105,26 +102,22 @@ function doLookup(entities, options, cb) {
         entityLookup[entity.value.toLowerCase()] = entity;
         pendingLookupCache.addRunningLookup(entity.value);
 
-        if (doLookupLogging)
-          lookupHashSet.add(entity.value);
+        if (doLookupLogging) lookupHashSet.add(entity.value);
       }
     } else if (entity.isIPv4 && !entity.isPrivateIP && !IGNORED_IPS.has(entity.value)) {
-      if (doLookupLogging)
-        lookupIpSet.add(entity.value);
+      if (doLookupLogging) lookupIpSet.add(entity.value);
 
       pendingLookupCache.addRunningLookup(entity.value);
 
       ipv4Entities.push(entity);
     } else if (entity.isDomain) {
-      if (doLookupLogging)
-        lookupDomainSet.add(entity.value);
+      if (doLookupLogging) lookupDomainSet.add(entity.value);
 
       pendingLookupCache.addRunningLookup(entity.value);
 
       domainEntities.push(entity);
     } else if (entity.isURL) {
-      if (doLookupLogging)
-        lookupUrlSet.add(entity.value);
+      if (doLookupLogging) lookupUrlSet.add(entity.value);
 
       pendingLookupCache.addRunningLookup(entity.value);
 
@@ -246,7 +239,7 @@ function doLookup(entities, options, cb) {
 }
 
 function _removeFromThrottleCache(apiKey) {
-  return function() {
+  return function () {
     throttleCache.delete(apiKey);
   };
 }
@@ -275,7 +268,10 @@ function _handleRequestError(err, response, body, options, cb) {
     // we don't treat it as an error and just return no results.  In the future, integrations
     // might allow non-error messages to be passed back to the user such as (VT query limit reached)
     if (!throttleCache.has(options.apiKey)) {
-      setTimeout(_removeFromThrottleCache(options.apiKey), options.lookupThrottleDuration * 60 * 1000);
+      setTimeout(
+        _removeFromThrottleCache(options.apiKey),
+        options.lookupThrottleDuration * 60 * 1000
+      );
       // false here indicates that the throttle warning message has not been shown to the user yet
       throttleCache.set(options.apiKey, false);
     }
@@ -325,41 +321,44 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
     debugLookupStats.hashLookups++;
   }
 
-  async.mapLimit(hashesArray, 10, (hashValue, next) => {
-    let requestOptions = {
-      uri: `${LOOKUP_URI_BY_TYPE.hash}/${hashValue}`,
-      method: 'GET',
-      headers: { 'x-apikey': options.apiKey }
-    };
-    requestWithDefaults(requestOptions, function(err, response, body) {
-      _handleRequestError(err, response, body, options, function(err, body) {
-        if (err) {
-          Logger.error(err, 'Error Looking up Hash');
-          return next(err);
-        }
+  async.mapLimit(
+    hashesArray,
+    10,
+    (hashValue, next) => {
+      let requestOptions = {
+        uri: `${LOOKUP_URI_BY_TYPE.hash}/${hashValue}`,
+        method: 'GET',
+        headers: { 'x-apikey': options.apiKey }
+      };
+      requestWithDefaults(requestOptions, function (err, response, body) {
+        _handleRequestError(err, response, body, options, function (err, body) {
+          if (err) {
+            Logger.error(err, 'Error Looking up Hash');
+            return next(err);
+          }
 
+          const formattedResult = _processLookupItem(
+            'file',
+            body,
+            entityLookup[fp.toLower(hashValue)],
+            options[TYPES_BY_SHOW_NO_DETECTIONS.hash],
+            options.showNoInfoTag
+          );
 
-        const formattedResult = _processLookupItem(
-          'file',
-          body,
-          entityLookup[fp.toLower(hashValue)],
-          options[TYPES_BY_SHOW_NO_DETECTIONS.hash],
-          options.showNoInfoTag
-        );
-
-        return next(null, formattedResult);
+          return next(null, formattedResult);
+        });
       });
-    })
-  }, (err, results) => {
-    if(err) return done(err);
+    },
+    (err, results) => {
+      if (err) return done(err);
 
-    done(null, fp.compact(results));
-  });
+      done(null, fp.compact(results));
+    }
+  );
 }
 
 function _lookupUrl(entity, options, done) {
-  if (doLookupLogging)
-    debugLookupStats.urlLookups++;
+  if (doLookupLogging) debugLookupStats.urlLookups++;
 
   let requestOptions = {
     uri: `${LOOKUP_URI_BY_TYPE.url}/${Buffer.from(entity.value).toString('base64')}`,
@@ -389,7 +388,13 @@ function _lookupUrl(entity, options, done) {
   });
 }
 
-const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, showNoInfoTag) => {
+const _processLookupItem = (
+  type,
+  result,
+  entity,
+  showEntitiesWithNoDetections,
+  showNoInfoTag
+) => {
   const data = fp.get('data', result);
   const attributes = fp.get('attributes', data);
   const lastAnalysisStats = fp.get('last_analysis_stats', attributes);
@@ -414,14 +419,14 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
 
   if (!totalMalicious && !showEntitiesWithNoDetections && showNoInfoTag) {
     return {
-        entity,
-        data: {
-          summary: ['No Information in VirusTotal'],
-          details: {
-            noInfoMessage: true
-          }
+      entity,
+      data: {
+        summary: ['No Information in VirusTotal'],
+        details: {
+          noInfoMessage: true
         }
       }
+    };
   }
 
   const scans = fp.flow(
@@ -431,16 +436,18 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
       detected: scanResult.category === 'malicious',
       result:
         !scanResult.result && scanResult.category === 'type-unsupported'
-          ? 'type-unsupported' :
-        ['clean', 'suspicious', 'malware', 'malicious', 'unrated'].includes(
-          scanResult.result
-        )
+          ? 'type-unsupported'
+          : ['clean', 'suspicious', 'malware', 'malicious', 'unrated'].includes(
+              scanResult.result
+            )
           ? fp.capitalize(scanResult.result)
           : scanResult.result
     }))
   )(attributes);
 
-  const coreLink = `https://www.virustotal.com/gui/${fp.replace("_", "-", data.type)}/${data.id}`;
+  const coreLink = `https://www.virustotal.com/gui/${fp.replace('_', '-', data.type)}/${
+    data.id
+  }`;
 
   const detailsTab = getDetailFields(DETAILS_FORMATS[type], attributes);
 
@@ -474,7 +481,7 @@ const _processLookupItem = (type, result, entity, showEntitiesWithNoDetections, 
           fp.orderBy('result', 'desc')
         )(scans),
         detailsTab,
-        tags: attributes.tags,
+        tags: attributes.tags
       }
     }
   };
@@ -566,32 +573,17 @@ const getDetailFields = (detailFields, attributes) =>
     const transformedValue = detailField.transformation
       ? detailField.transformation(value)
       : value;
-    
-    const transformedValueWithCorrectKeys = detailField.isObject
-      ? reduce(
-          (agg, value, key) => ({ ...agg, [fp.replace('.', ',', key)]: value }),
-          {},
-          transformedValue
-        )
-      : transformedValue;
 
     return {
       ...detailField,
       ...(value && {
-        value: transformedValueWithCorrectKeys
-      }),
-      ...(detailField.isObject &&
-        fp.size(transformedValueWithCorrectKeys) && {
-          fieldNames: fp.keys(transformedValueWithCorrectKeys)
-        })
+        value: transformedValue
+      })
     };
   }, detailFields);
 
-
-
 function _lookupEntityType(type, entity, options, done) {
-  if (doLookupLogging)
-    debugLookupStats[`${type}Lookups`]++;
+  if (doLookupLogging) debugLookupStats[`${type}Lookups`]++;
 
   let requestOptions = {
     uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}`,
@@ -602,13 +594,13 @@ function _lookupEntityType(type, entity, options, done) {
   Logger.debug({ requestOptions }, 'Request Options for Type detections Lookup');
 
   requestWithDefaults(requestOptions, function (err, response, body) {
-    _handleRequestError(err, response, body, options, function(err, result) {
+    _handleRequestError(err, response, body, options, function (err, result) {
       if (err) {
         Logger.error(err, `Error Looking up ${_.startCase(type)}`);
         return done(err);
       }
 
-      let lookupResults =  _processLookupItem(
+      let lookupResults = _processLookupItem(
         type,
         result,
         entity,
@@ -616,7 +608,7 @@ function _lookupEntityType(type, entity, options, done) {
         options.showNoInfoTag
       );
 
-      if(!fp.get('data.details', lookupResults)) return done();
+      if (!fp.get('data.details', lookupResults)) return done();
 
       done(null, lookupResults);
     });
@@ -670,19 +662,19 @@ function onDetails(lookupObject, options, cb) {
       method: 'GET',
       headers: { 'x-apikey': options.apiKey }
     };
-  
+
     Logger.debug(
       { relationsRefFilesRequestOptions },
       'Request Options for Type referrer_files Relations Lookup'
     );
-  
+
     requestWithDefaults(relationsRefFilesRequestOptions, function (err, response, body) {
       _handleRequestError(err, response, body, options, function (err, refFilesResult) {
         if (err) {
           Logger.error(err, `Error Looking up ${_.startCase(type)}`);
           return done(err);
         }
-  
+
         if (refFilesResult.data) {
           const referenceFiles = fp.flow(
             fp.getOr([], 'data'),
@@ -690,7 +682,11 @@ function onDetails(lookupObject, options, cb) {
               link:
                 referenceFile.attributes &&
                 `https://www.virustotal.com/gui/${referenceFile.type}/${referenceFile.id}/detection`,
-              name: fp.getOr(referenceFile.id, 'attributes.meaningful_name', referenceFile),
+              name: fp.getOr(
+                referenceFile.id,
+                'attributes.meaningful_name',
+                referenceFile
+              ),
               type: fp.getOr(referenceFile.type, 'attributes.type_tag', referenceFile),
               detections: referenceFile.attributes
                 ? `${fp.getOr(
@@ -709,32 +705,32 @@ function onDetails(lookupObject, options, cb) {
               )(referenceFile)
             }))
           )(refFilesResult);
-            
+
           lookupObject.data.details = {
             ...fp.get('data.details', lookupObject),
             expandedWhoisMap: {},
             referenceFiles
           };
         }
-  
+
         let relationsWhoIsRequestOptions = {
           uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/historical_whois`,
           method: 'GET',
           headers: { 'x-apikey': options.apiKey }
         };
-  
+
         Logger.debug(
           { relationsWhoIsRequestOptions },
           'Request Options for Type historical_whois Relations Lookup'
         );
-  
+
         requestWithDefaults(relationsWhoIsRequestOptions, function (err, response, body) {
           _handleRequestError(err, response, body, options, function (err, whoIsResult) {
             if (err) {
               Logger.error(err, `Error Looking up ${_.startCase(type)}`);
               return done(err);
             }
-  
+
             if (whoIsResult.data) {
               const historicalWhoIs = fp.flow(
                 fp.getOr([], 'data'),
@@ -746,14 +742,14 @@ function onDetails(lookupObject, options, cb) {
                   ...fp.get('attributes.whois_map', whoIsLookup)
                 }))
               )(whoIsResult);
-  
+
               lookupObject.data.details = {
                 ...fp.get('data.details', lookupObject),
                 expandedWhoisMap: {},
                 historicalWhoIs
               };
             }
-  
+
             Logger.trace({ lookupObject }, 'lookupObject');
             cb(null, lookupObject.data);
           });
@@ -761,11 +757,9 @@ function onDetails(lookupObject, options, cb) {
       });
     });
   } else {
-    return cb(null, lookupObject.data)
+    return cb(null, lookupObject.data);
   }
-
 }
-
 
 function startup(logger) {
   Logger = logger;
@@ -799,7 +793,10 @@ function startup(logger) {
     defaults.key = fs.readFileSync(config.request.key);
   }
 
-  if (typeof config.request.passphrase === 'string' && config.request.passphrase.length > 0) {
+  if (
+    typeof config.request.passphrase === 'string' &&
+    config.request.passphrase.length > 0
+  ) {
     defaults.passphrase = config.request.passphrase;
   }
 
@@ -812,7 +809,7 @@ function startup(logger) {
   }
 
   // if (typeof config.request.rejectUnauthorized === 'boolean') {
-    defaults.rejectUnauthorized = false;
+  defaults.rejectUnauthorized = false;
   // }
 
   defaults.json = true;
@@ -852,7 +849,8 @@ function validateOptions(userOptions, cb) {
   let errors = [];
   if (
     typeof userOptions.apiKey.value !== 'string' ||
-    (typeof userOptions.apiKey.value === 'string' && userOptions.apiKey.value.length === 0)
+    (typeof userOptions.apiKey.value === 'string' &&
+      userOptions.apiKey.value.length === 0)
   ) {
     errors.push({
       key: 'apiKey',
