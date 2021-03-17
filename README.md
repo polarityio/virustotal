@@ -1,6 +1,6 @@
 # Polarity VirusTotal Integration
 
-Polarity's VirusTotal integration gives users access to automated MD5, SHA1, SHA256, IPv4, Domain, and URL lookups within VirusTotal and makes use of the public v2.0 REST API.
+Polarity's VirusTotal integration gives users access to automated MD5, SHA1, SHA256, IPv4, Domain, and URL lookups within VirusTotal and makes use of the public v3.0 REST API.
 
 VirusTotal is a free service that analyzes suspicious files and URLs and facilitates the quick detection of viruses, worms, trojans, and all kinds of malware.  For more information about VirusTotal and to sign up for a free API key please visit https://www.virustotal.com/.
 

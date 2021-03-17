@@ -6,13 +6,58 @@ polarity.export = PolarityComponent.extend({
   maxResolutionsToShow: 20,
   maxUrlsToShow: 20,
   showScanResults: false,
-  showDetectedUrls: false,
-  showResolutions: false,
+  showFilesReferring: false,
+  showHistoricalWhois: false,
+  expandedWhoisMap: Ember.computed.alias('block.data.details.expandedWhoisMap'),
   domainVirusTotalLink: '',
-  ipVirusTotalLink: '',
   numUrlsShown: 0,
   numResolutionsShown: 0,
-  redThreat: '#fa5843',
+  whoIsIpKeys: [
+    { key: 'origin' },
+    { key: 'role' },
+    { key: 'mnt-by' },
+    { key: 'admin-c' },
+    { key: 'netname' },
+    { key: 'NetType' },
+    { key: 'address' },
+    { key: 'inetnum' },
+    { key: 'Ref' },
+    { key: 'Parent' },
+    { key: 'Nedivange' },
+    { key: 'Updated Date', isDate: true },
+    { key: 'OrgId' },
+    { key: 'OrgAbuseName' },
+    { key: 'OrgAbusePhone' },
+    { key: 'OrgTechRef' },
+    { key: 'OrgTechHandle' },
+    { key: 'OrgAbuseRef' },
+    { key: 'City' },
+    { key: 'StateProv' },
+    { key: 'Address' }
+  ],
+  whoIsDomainKeys: [
+    { key: 'Domain Name' },
+    { key: 'Name Server' },
+    { key: 'Domain Status' },
+    { key: 'DNSSEC' },
+    { key: 'Creation Date', isDate: true },
+    { key: 'Updated Date' },
+    { key: 'Registrant Organization' },
+    { key: 'Registrant Country' },
+    { key: 'Registrant State/Province' },
+    { key: 'Registrant Email' },
+    { key: 'Registrar' },
+    { key: 'Registrar URL' },
+    { key: 'Registrar WHOIS Server' },
+    { key: 'Registrar IANA ID' },
+    { key: 'Registrar Abuse Contact Phone' },
+    { key: 'Registrar Abuse Contact Email' },
+    { key: 'Registrar Registration Expiration Date', isDate: true },
+    { key: 'Registry Domain ID' },
+    { key: 'Registry Expiry Date', isDate: true }
+  ],
+  activeTab: 'detection',
+  redThreat: '#ed2e4d',
   greenThreat: '#7dd21b',
   yellowThreat: '#ffc15d',
   /**
@@ -50,28 +95,14 @@ polarity.export = PolarityComponent.extend({
     return circumference * (1 - progress);
   },
   _getThreatColor(ticScore) {
-    if (ticScore >= 50) {
+    if (ticScore > 0) {
       return this.get('redThreat');
-    } else if (ticScore >= 35) {
-      return this.get('yellowThreat');
     } else {
       return this.get('greenThreat');
     }
   },
   init() {
     this.set('showScanResults', this.get('details.total') < 15);
-    this.set(
-      'domainVirusTotalLink',
-      'https://www.virustotal.com/gui/domain/' +
-        this.get('block.entity.value') +
-        '/relations'
-    );
-    this.set(
-      'ipVirusTotalLink',
-      'https://www.virustotal.com/gui/ip-address/' +
-        this.get('block.entity.value') +
-        '/relations'
-    );
     this.set(
       'numUrlsShown',
       Math.min(this.get('maxUrlsToShow'), this.get('details.detectedUrls.length'))
@@ -80,20 +111,20 @@ polarity.export = PolarityComponent.extend({
       'numResolutionsShown',
       Math.min(this.get('maxResolutionsToShow'), this.get('details.resolutions.length'))
     );
+    console.log(this.get('details'))
 
     this._super(...arguments);
   },
   actions: {
-    toggleShowScanResults: function () {
-      this.toggleProperty(`showScanResults`);
+    changeTab: function (tabName) {
+      this.set('activeTab', tabName);
+    },
+    toggleShowResults: function (resultType) {
+      this.toggleProperty(resultType);
       this.get('block').notifyPropertyChange('data');
     },
-    toggleShowDetectedUrls: function () {
-      this.toggleProperty(`showDetectedUrls`);
-      this.get('block').notifyPropertyChange('data');
-    },
-    toggleShowResolutions: function () {
-      this.toggleProperty(`showResolutions`);
+    expandWhoIsRow: function (index) {
+      this.set(`expandedWhoisMap.${index}`, !this.get(`expandedWhoisMap.${index}`));
       this.get('block').notifyPropertyChange('data');
     }
   }
