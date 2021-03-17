@@ -360,8 +360,9 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
 function _lookupUrl(entity, options, done) {
   if (doLookupLogging) debugLookupStats.urlLookups++;
 
+  const urlAsBase64WithoutPadding = Buffer.from(entity.value).toString('base64').replace(/=+$/, '');
   let requestOptions = {
-    uri: `${LOOKUP_URI_BY_TYPE.url}/${Buffer.from(entity.value).toString('base64')}`,
+    uri: `${LOOKUP_URI_BY_TYPE.url}/${urlAsBase64WithoutPadding}`,
     method: 'GET',
     headers: { 'x-apikey': options.apiKey }
   };
