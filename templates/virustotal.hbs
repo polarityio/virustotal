@@ -65,7 +65,7 @@
     </ul>
 
     {{#if (eq activeTab "detection")}}
-        <div class="p-link">
+        <div class="p-link mt-2">
             <a href="{{details.detectionsLink}}">View Scans in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
         </div>
         <div>
@@ -141,7 +141,7 @@
     {{/if}}
 
     {{#if (eq activeTab "details")}}
-        <div class="p-link">
+        <div class="p-link mt-2">
             <a href="{{details.detailsLink}}">View Details in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
         </div>
         {{#if details.detailsTab.length}}
@@ -184,7 +184,7 @@
     {{/if}}
 
     {{#if (eq activeTab "relations")}}
-        <div class="p-link">
+        <div class="p-link mt-2">
             <a href="{{details.relationsLink}}">View Relations in VirusTotal {{fa-icon "external-link-square" class="external-link-icon"}}</a>
         </div>
         {{#if details.referenceFiles.length}}
