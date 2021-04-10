@@ -74,6 +74,22 @@ Default: true
 
 If checked, the integration will display a warning message in the overlay window when your VirusTotal lookups are being throttled.  Only one message will be shown per throttle duration.
 
+### Maximum number of hashes per lookup request
+
+Set the maximum number of hashes per lookup that are allowed by your API key (defaults to 4)
+
+### Indicator Blocklist
+
+Comma delimited list of indicators you do not want looked up. List is an exact match (URL matches require the scheme). This option must be set to "Only Admins Can View and Edit".
+
+### Domain and URL Blocklist Regex
+
+Domains or URLs that match the given regex will not be looked up (if blank, all domains and URLS will be looked up). Note that the regex does not need to account for the scheme for URLs (i.e., the regex will match against the domain and subdomain of the URL. Do not wrap your regex in forward slashes. This option must be set to "Only Admins Can View and Edit".
+
+### IP Blocklist Regex
+
+IPs that match the given regex will not be looked up (if blank, all IPs will be looked up). Do not wrap your regex in forward slashes. This option must be set to "Only Admins Can View and Edit".
+
 ## Installation Instructions
 
 Installation instructions for integrations are provided on the [PolarityIO GitHub Page](https://polarityio.github.io/).

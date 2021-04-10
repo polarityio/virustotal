@@ -216,7 +216,7 @@ module.exports = {
       key: 'domainUrlBlocklistRegex',
       name: 'Domain and URL Blocklist Regex',
       description:
-        'Domains or URLs that match the given regex will not be looked up (if blank, all domains and URLS will be looked up).  Note that the regex does not need to account for the scheme for URLs (i.e., the regex will match against the domain and subdomain of the URL. Do not wrap your regex in forward slashes.',
+        'Domains or URLs that match the given regex will not be looked up (if blank, all domains and URLS will be looked up).  Note that the regex does not need to account for the scheme for URLs (i.e., the regex will match against the domain and subdomain of the URL. Do not wrap your regex in forward slashes. This option must be set to "Only Admins Can View and Edit".',
       default: '',
       type: 'text',
       userCanEdit: false,
@@ -226,7 +226,7 @@ module.exports = {
       key: 'ipBlocklistRegex',
       name: 'IP Blocklist Regex',
       description:
-        'IPs that match the given regex will not be looked up (if blank, all IPs will be looked up).  Do not wrap your regex in forward slashes.',
+        'IPs that match the given regex will not be looked up (if blank, all IPs will be looked up).  Do not wrap your regex in forward slashes. This option must be set to "Only Admins Can View and Edit".',
       default: '',
       type: 'text',
       userCanEdit: false,
