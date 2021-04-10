@@ -4,7 +4,6 @@ const request = require('request');
 const _ = require('lodash');
 const fp = require('lodash/fp');
 const map = require('lodash/fp/map').convert({ cap: false });
-const reduce = require('lodash/fp/reduce').convert({ cap: false });
 const config = require('./config/config');
 const async = require('async');
 const PendingLookupCache = require('./lib/pending-lookup-cache');
@@ -12,6 +11,8 @@ const fs = require('fs');
 
 let Logger;
 let pendingLookupCache;
+let domainUrlBlocklistRegex = null;
+let ipBlocklistRegex = null;
 
 let doLookupLogging;
 let lookupHashSet;
@@ -87,6 +88,10 @@ function doLookup(entities, options, cb) {
   entities.forEach(function (entity) {
     if (pendingLookupCache.isRunning(entity.value))
       return pendingLookupCache.addPendingLookup(entity.value, cb);
+
+    if(_isEntityBlocked(entity, options)){
+      return;
+    }
 
     if (entity.isMD5 || entity.isSHA1 || entity.isSHA256) {
       // VT can only look up 4 or 25 hashes at a time depending on the key type
@@ -236,6 +241,89 @@ function doLookup(entities, options, cb) {
       cb(null, combinedResults);
     }
   );
+}
+
+function _isEntityBlocked(entity, options) {
+  const blocklist = options.blocklist;
+  const currentIpBlocklistRegex = options.ipBlocklistRegex;
+  const currentDomainUrlBlocklistRegex = options.domainUrlBlocklistRegex;
+
+  // initialize regex if needed
+  if(ipBlocklistRegex === null && currentIpBlocklistRegex.length > 0){
+    Logger.debug('Initializing ip blocklist regex');
+    ipBlocklistRegex = new RegExp(currentIpBlocklistRegex);
+  }
+
+  if(domainUrlBlocklistRegex === null && currentDomainUrlBlocklistRegex.length > 0){
+    Logger.debug('Initializing domain/url blocklist regex');
+    domainUrlBlocklistRegex = new RegExp(currentDomainUrlBlocklistRegex);
+  }
+
+  if(currentIpBlocklistRegex.length === 0){
+    ipBlocklistRegex = null;
+  }
+
+  if(currentDomainUrlBlocklistRegex.length === 0){
+    domainUrlBlocklistRegex = null;
+  }
+
+  if(ipBlocklistRegex !== null && ipBlocklistRegex.toString() !== `/${currentIpBlocklistRegex}/`){
+    Logger.debug('Updating ipBlocklistRegex');
+    ipBlocklistRegex = new RegExp(currentIpBlocklistRegex);
+  }
+
+  if(domainUrlBlocklistRegex !== null && domainUrlBlocklistRegex.toString() !== `/${currentDomainUrlBlocklistRegex}/`){
+    Logger.debug('Updating domainUrlBlocklistRegex');
+    domainUrlBlocklistRegex = new RegExp(currentDomainUrlBlocklistRegex);
+  }
+
+  Logger.trace(
+    { blocklist },
+    'Blocklist value'
+  );
+
+  if (_.includes(blocklist, entity.value.toLowerCase())) {
+    Logger.debug({entity: entity.value}, 'Blocked Entity');
+    return true;
+  }
+
+  if (entity.isIP && !entity.isPrivateIP) {
+    if (ipBlocklistRegex !== null) {
+      if (ipBlocklistRegex.test(entity.value)) {
+        Logger.debug({ ip: entity.value }, 'IP lookup blocked due to blocklist regex');
+        return true;
+      }
+    }
+  }
+
+  if (entity.isDomain) {
+    if (domainUrlBlocklistRegex !== null) {
+      if (domainUrlBlocklistRegex.test(entity.value)) {
+        Logger.debug(
+          { domain: entity.value },
+          'Domain lookup blocked due to blocklist regex'
+        );
+        return true;
+      }
+    }
+  }
+
+  if(entity.isURL){
+    if (domainUrlBlocklistRegex !== null) {
+      const urlObj = new URL(entity.value);
+      const hostname = urlObj.hostname;
+      Logger.debug(hostname, 'Hostname of url to block');
+      if (domainUrlBlocklistRegex.test(hostname)) {
+        Logger.debug(
+          { url: entity.value},
+          'URL lookup blocked due to blocklist regex'
+        );
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 function _removeFromThrottleCache(apiKey) {
