@@ -193,14 +193,44 @@ module.exports = {
       adminOnly: false
     },
     {
-      key: 'isPrivateApi',
-      name: 'Is Private API',
+      key: 'maxHashesPerGroup',
+      name: 'Maximum number of hashes per lookup request',
       description:
-        'If true, the integration will treat your key as a paid private API key which allows for more efficient hash lookups',
-      default: false,
-      type: 'boolean',
+        'Set the maximum number of hashes per lookup that are allowed by your API key (defaults to 4)',
+      default: 4,
+      type: 'number',
       userCanEdit: true,
       adminOnly: false
+    },
+    {
+      key: 'blocklist',
+      name: 'Indicator Blocklist',
+      description:
+        'Comma delimited list of indicators you do not want looked up.  List is an exact match (URL matches require the scheme).  This option must be set to "Only Admins Can View and Edit".',
+      default: '',
+      type: 'text',
+      userCanEdit: false,
+      adminOnly: true
+    },
+    {
+      key: 'domainUrlBlocklistRegex',
+      name: 'Domain and URL Blocklist Regex',
+      description:
+        'Domains or URLs that match the given regex will not be looked up (if blank, all domains and URLS will be looked up).  Note that the regex does not need to account for the scheme for URLs (i.e., the regex will match against the domain and subdomain of the URL. Do not wrap your regex in forward slashes.',
+      default: '',
+      type: 'text',
+      userCanEdit: false,
+      adminOnly: true
+    },
+    {
+      key: 'ipBlocklistRegex',
+      name: 'IP Blocklist Regex',
+      description:
+        'IPs that match the given regex will not be looked up (if blank, all IPs will be looked up).  Do not wrap your regex in forward slashes.',
+      default: '',
+      type: 'text',
+      userCanEdit: false,
+      adminOnly: true
     }
   ]
 };
