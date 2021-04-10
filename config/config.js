@@ -193,12 +193,12 @@ module.exports = {
       adminOnly: false
     },
     {
-      key: 'isPrivateApi',
-      name: 'Is Private API',
+      key: 'maxHashesPerGroup',
+      name: 'Maximum number of hashes per lookup request',
       description:
-        'If true, the integration will treat your key as a paid private API key which allows for more efficient hash lookups',
-      default: false,
-      type: 'boolean',
+        'Set the maximum number of hashes per lookup that are allowed by your API key (defaults to 4)',
+      default: 4,
+      type: 'number',
       userCanEdit: true,
       adminOnly: false
     },

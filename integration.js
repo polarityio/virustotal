@@ -83,7 +83,7 @@ function doLookup(entities, options, cb) {
   let hashGroup = [];
 
   Logger.trace(entities);
-  const MAX_HASHES_PER_GROUP = options.isPrivateApi ? 25 : 4;
+  const MAX_HASHES_PER_GROUP = options.maxHashesPerGroup;
 
   entities.forEach(function (entity) {
     if (pendingLookupCache.isRunning(entity.value))
@@ -944,6 +944,14 @@ function validateOptions(userOptions, cb) {
     errors.push({
       key: 'apiKey',
       message: 'You must provide a VirusTotal API key'
+    });
+  }
+
+  let maxHashesPerGroup = userOptions.maxHashesPerGroup.value;
+  if (_.isNaN(maxHashesPerGroup) || maxHashesPerGroup <= 0) {
+    errors.push({
+      key: 'maxHashesPerGroup',
+      message: 'Maximum number of hashes per lookup request must be greater than 0'
     });
   }
 
