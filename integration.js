@@ -844,8 +844,27 @@ function onDetails(lookupObject, options, cb) {
         });
       });
     });
+  } else if (entity.isMD5 || entity.isSHA1 || entity.isSHA256) {
+    let fileNameOptions = {
+      uri: `https://www.virustotal.com/api/v3/files/${entity.value}`,
+      method: 'GET',
+      headers: { 'x-apikey': options.apiKey }
+    };
+
+    requestWithDefaults(fileNameOptions, (err, response, body) => {
+      _handleRequestError(err, response, body, options, (err, result) => {
+        if (err) {
+          Logger.error(err, `Error Looking up ${_.startCase(type)}`);
+          return done(err);
+        }
+
+        lookupObject.data.details.fileNames = result.data.attributes.names;
+
+        cb(null, lookupObject.data);
+      });
+    });
   } else {
-    return cb(null, lookupObject.data);
+    cb(null, lookupObject.data);
   }
 }
 
@@ -957,56 +976,9 @@ function validateOptions(userOptions, cb) {
   cb(null, errors);
 }
 
-function fetchNames(entity, options, cb) {
-  if (entity.isMD5 || entity.isSHA1 || entity.isSHA256) {
-    request.get(
-      `https://www.virustotal.com/api/v3/files/${entity.value}`,
-      {
-        method: 'GET',
-        headers: { 'x-apikey': options.apiKey }
-      },
-      (err, response, body) => {
-        _handleRequestError(err, response, body, options, (err, results) => {
-          if (err) {
-            Logger.trace({ err }, 'Error retrying lookup');
-            cb(err);
-          }
-
-          return cb(null, results);
-        });
-      }
-    );
-  } else {
-    return cb(null);
-  }
-}
-
-function onMessage(payload, options, callback) {
-  switch (payload.action) {
-    case 'FETCH_NAMES':
-      fetchNames(payload.entity, options, (err, lookupResults) => {
-        const results = Object.assign({}, JSON.parse(lookupResults)); // JSON to POJO
-
-        if (err) {
-          Logger.trace({ err }, 'Error retrying lookup');
-          callback(err);
-        } else {
-          callback(
-            null,
-            results && results && results.data === null
-              ? { data: { summary: [] } }
-              : results
-          );
-        }
-      });
-      break;
-  }
-}
-
 module.exports = {
   doLookup,
   onDetails,
   startup,
-  onMessage,
   validateOptions
 };
