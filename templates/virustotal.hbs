@@ -100,7 +100,7 @@
       <li class="nav-item">
         <a
           {{action "changeTab" "fileNames"}}
-          class="nav-link {{if (eq activeTab "filenNames") "active"}}"
+          class="nav-link {{if (eq activeTab "fileNames") "active"}}"
           href="#"
         >
           Filenames
@@ -193,33 +193,26 @@
   {{! end of detections}}
   {{! start of file names}}
   {{#if (eq activeTab "fileNames")}}
-    <div class="p-link mt-2">
-      <a href="{{details.detectionsLink}}">View Scans in VirusTotal
-        {{fa-icon "external-link-square" class="external-link-icon"}}</a>
-    </div>
-    {{#if block.data.details.fileNames.attributes.names}}
-      <div class="filename-title">
-        {{fa-icon "laptop" fixedWidth=true}}
-        Filenames
-      </div>
-      {{#each block.data.details.fileNames.attributes.names as |name|}}
-        <div>
-          <span class="p-value">{{name}}</span>
-        </div>
-      {{/each}}
+    {{#if block.isLoadingDetails}}
+      <span class="p-footnote">Loading Highlights ...</span>
     {{else}}
-      <button
-        type="button"
-        class="p-btn btn btn-sm btn-polarity filenames-btn mt-2"
-        {{action "fetchNames"}}
-      >
-        Get Filenames
-      </button>
-      <div>
-        <span class="p-footnote">Use this button to retrieve file names associated with
-          the file hash:
-          {{block.entity.value}}</span>
+      <div class="p-link mt-2">
+        <a href="{{details.detectionsLink}}">View Scans in VirusTotal
+          {{fa-icon "external-link-square" class="external-link-icon"}}</a>
       </div>
+      {{#if block.data.details.fileNames}}
+        <div class="p-title">
+          {{fa-icon "laptop" fixedWidth=true}}
+          Filenames
+        </div>
+        {{#each block.data.details.fileNames as |name index|}}
+          <ul class="name-list">
+            <li class="p-value">{{name}}</li>
+          </ul>
+        {{/each}}
+      {{else}}
+        <span>No Filenames found</span>
+      {{/if}}
     {{/if}}
   {{/if}}
   {{! end of file names}}
