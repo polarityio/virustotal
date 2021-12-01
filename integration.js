@@ -38,9 +38,6 @@ const debugLookupStats = {
 const throttleCache = new Map();
 
 const BUG_ICON = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bug" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="svg-inline--fa fa-bug fa-w-16"><path fill="currentColor" d="M511.988 288.9c-.478 17.43-15.217 31.1-32.653 31.1H424v16c0 21.864-4.882 42.584-13.6 61.145l60.228 60.228c12.496 12.497 12.496 32.758 0 45.255-12.498 12.497-32.759 12.496-45.256 0l-54.736-54.736C345.886 467.965 314.351 480 280 480V236c0-6.627-5.373-12-12-12h-24c-6.627 0-12 5.373-12 12v244c-34.351 0-65.886-12.035-90.636-32.108l-54.736 54.736c-12.498 12.497-32.759 12.496-45.256 0-12.496-12.497-12.496-32.758 0-45.255l60.228-60.228C92.882 378.584 88 357.864 88 336v-16H32.666C15.23 320 .491 306.33.013 288.9-.484 270.816 14.028 256 32 256h56v-58.745l-46.628-46.628c-12.496-12.497-12.496-32.758 0-45.255 12.498-12.497 32.758-12.497 45.256 0L141.255 160h229.489l54.627-54.627c12.498-12.497 32.758-12.497 45.256 0 12.496 12.497 12.496 32.758 0 45.255L424 197.255V256h56c17.972 0 32.484 14.816 31.988 32.9zM257 0c-61.856 0-112 50.144-112 112h224C369 50.144 318.856 0 257 0z" class=""></path></svg>`;
-
-const GLOBE_ICON = `<svg viewBox="0 0 496 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" data-icon="globe" data-prefix="fas" id="ember882" class="svg-inline--fa fa-globe fa-w-16 fa-fw  undefined ember-view"><path fill="currentColor" d="M336.5 160C322 70.7 287.8 8 248 8s-74 62.7-88.5 152h177zM152 256c0 22.2 1.2 43.5 3.3 64h185.3c2.1-20.5 3.3-41.8 3.3-64s-1.2-43.5-3.3-64H155.3c-2.1 20.5-3.3 41.8-3.3 64zm324.7-96c-28.6-67.9-86.5-120.4-158-141.6 24.4 33.8 41.2 84.7 50 141.6h108zM177.2 18.4C105.8 39.6 47.8 92.1 19.3 160h108c8.7-56.9 25.5-107.8 49.9-141.6zM487.4 192H372.7c2.1 21 3.3 42.5 3.3 64s-1.2 43-3.3 64h114.6c5.5-20.5 8.6-41.8 8.6-64s-3.1-43.5-8.5-64zM120 256c0-21.5 1.2-43 3.3-64H8.6C3.2 212.5 0 233.8 0 256s3.2 43.5 8.6 64h114.6c-2-21-3.2-42.5-3.2-64zm39.5 96c14.5 89.3 48.7 152 88.5 152s74-62.7 88.5-152h-177zm159.3 141.6c71.4-21.2 129.4-73.7 158-141.6h-108c-8.8 56.9-25.6 107.8-50 141.6zM19.3 352c28.6 67.9 86.5 120.4 158 141.6-24.4-33.8-41.2-84.7-50-141.6h-108z"></path></svg>`;
-
 const IGNORED_IPS = new Set(['127.0.0.1', '255.255.255.255', '0.0.0.0']);
 
 const LOOKUP_URI_BY_TYPE = {
@@ -89,7 +86,7 @@ function doLookup(entities, options, cb) {
     if (pendingLookupCache.isRunning(entity.value))
       return pendingLookupCache.addPendingLookup(entity.value, cb);
 
-    if(_isEntityBlocked(entity, options)){
+    if (_isEntityBlocked(entity, options)) {
       return;
     }
 
@@ -249,41 +246,44 @@ function _isEntityBlocked(entity, options) {
   const currentDomainUrlBlocklistRegex = options.domainUrlBlocklistRegex;
 
   // initialize regex if needed
-  if(ipBlocklistRegex === null && currentIpBlocklistRegex.length > 0){
+  if (ipBlocklistRegex === null && currentIpBlocklistRegex.length > 0) {
     Logger.debug('Initializing ip blocklist regex');
     ipBlocklistRegex = new RegExp(currentIpBlocklistRegex);
   }
 
-  if(domainUrlBlocklistRegex === null && currentDomainUrlBlocklistRegex.length > 0){
+  if (domainUrlBlocklistRegex === null && currentDomainUrlBlocklistRegex.length > 0) {
     Logger.debug('Initializing domain/url blocklist regex');
     domainUrlBlocklistRegex = new RegExp(currentDomainUrlBlocklistRegex);
   }
 
-  if(currentIpBlocklistRegex.length === 0){
+  if (currentIpBlocklistRegex.length === 0) {
     ipBlocklistRegex = null;
   }
 
-  if(currentDomainUrlBlocklistRegex.length === 0){
+  if (currentDomainUrlBlocklistRegex.length === 0) {
     domainUrlBlocklistRegex = null;
   }
 
-  if(ipBlocklistRegex !== null && ipBlocklistRegex.toString() !== `/${currentIpBlocklistRegex}/`){
+  if (
+    ipBlocklistRegex !== null &&
+    ipBlocklistRegex.toString() !== `/${currentIpBlocklistRegex}/`
+  ) {
     Logger.debug('Updating ipBlocklistRegex');
     ipBlocklistRegex = new RegExp(currentIpBlocklistRegex);
   }
 
-  if(domainUrlBlocklistRegex !== null && domainUrlBlocklistRegex.toString() !== `/${currentDomainUrlBlocklistRegex}/`){
+  if (
+    domainUrlBlocklistRegex !== null &&
+    domainUrlBlocklistRegex.toString() !== `/${currentDomainUrlBlocklistRegex}/`
+  ) {
     Logger.debug('Updating domainUrlBlocklistRegex');
     domainUrlBlocklistRegex = new RegExp(currentDomainUrlBlocklistRegex);
   }
 
-  Logger.trace(
-    { blocklist },
-    'Blocklist value'
-  );
+  Logger.trace({ blocklist }, 'Blocklist value');
 
   if (_.includes(blocklist, entity.value.toLowerCase())) {
-    Logger.debug({entity: entity.value}, 'Blocked Entity');
+    Logger.debug({ entity: entity.value }, 'Blocked Entity');
     return true;
   }
 
@@ -308,16 +308,13 @@ function _isEntityBlocked(entity, options) {
     }
   }
 
-  if(entity.isURL){
+  if (entity.isURL) {
     if (domainUrlBlocklistRegex !== null) {
       const urlObj = new URL(entity.value);
       const hostname = urlObj.hostname;
       Logger.debug(hostname, 'Hostname of url to block');
       if (domainUrlBlocklistRegex.test(hostname)) {
-        Logger.debug(
-          { url: entity.value},
-          'URL lookup blocked due to blocklist regex'
-        );
+        Logger.debug({ url: entity.value }, 'URL lookup blocked due to blocklist regex');
         return true;
       }
     }
@@ -448,7 +445,9 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
 function _lookupUrl(entity, options, done) {
   if (doLookupLogging) debugLookupStats.urlLookups++;
 
-  const urlAsBase64WithoutPadding = Buffer.from(entity.value).toString('base64').replace(/=+$/, '');
+  const urlAsBase64WithoutPadding = Buffer.from(entity.value)
+    .toString('base64')
+    .replace(/=+$/, '');
   let requestOptions = {
     uri: `${LOOKUP_URI_BY_TYPE.url}/${urlAsBase64WithoutPadding}`,
     method: 'GET',
@@ -845,8 +844,27 @@ function onDetails(lookupObject, options, cb) {
         });
       });
     });
+  } else if (entity.isMD5 || entity.isSHA1 || entity.isSHA256) {
+    let fileNameOptions = {
+      uri: `https://www.virustotal.com/api/v3/files/${entity.value}`,
+      method: 'GET',
+      headers: { 'x-apikey': options.apiKey }
+    };
+
+    requestWithDefaults(fileNameOptions, (err, response, body) => {
+      _handleRequestError(err, response, body, options, (err, result) => {
+        if (err) {
+          Logger.error(err, `Error Looking up ${_.startCase(type)}`);
+          return done(err);
+        }
+
+        lookupObject.data.details.fileNames = result.data.attributes.names;
+
+        cb(null, lookupObject.data);
+      });
+    });
   } else {
-    return cb(null, lookupObject.data);
+    cb(null, lookupObject.data);
   }
 }
 

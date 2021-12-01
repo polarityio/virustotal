@@ -111,7 +111,7 @@ polarity.export = PolarityComponent.extend({
       'numResolutionsShown',
       Math.min(this.get('maxResolutionsToShow'), this.get('details.resolutions.length'))
     );
-    console.log(this.get('details'))
+    console.log(this.get('details'));
 
     this._super(...arguments);
   },
