@@ -126,17 +126,6 @@ polarity.export = PolarityComponent.extend({
     expandWhoIsRow: function (index) {
       this.set(`expandedWhoisMap.${index}`, !this.get(`expandedWhoisMap.${index}`));
       this.get('block').notifyPropertyChange('data');
-    },
-    fetchNames: function () {
-      const payload = {
-        action: 'FETCH_NAMES',
-        entity: this.get('block.entity')
-      };
-
-      this.sendIntegrationMessage(payload).then((result) => {
-        this.set('summary', result.summary);
-        this.set('block.data.details.fileNames', result.data);
-      });
     }
   }
 });
