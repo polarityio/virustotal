@@ -82,11 +82,9 @@ polarity.export = PolarityComponent.extend({
       return this._getStrokeOffset(this.details.positives, this.elementCircumference);
     }
   ),
-
   threatCircumference: Ember.computed('threatRadius', function () {
     return 2 * Math.PI * this.get('threatRadius');
   }),
-
   elementCircumference: Ember.computed('elementRadius', function () {
     return 2 * Math.PI * this.get('elementRadius');
   }),
@@ -102,6 +100,11 @@ polarity.export = PolarityComponent.extend({
     }
   },
   init() {
+    this.set(
+      'showRegistryKeys',
+      this.get('details.behaviorSummary.registry_keys_opened')
+    );
+    this.set('showFilesOpened', this.get('details.behaviorSummary.files_opened'));
     this.set('showScanResults', this.get('details.total') < 15);
     this.set(
       'numUrlsShown',

@@ -448,6 +448,7 @@ function _lookupUrl(entity, options, done) {
   const urlAsBase64WithoutPadding = Buffer.from(entity.value)
     .toString('base64')
     .replace(/=+$/, '');
+
   let requestOptions = {
     uri: `${LOOKUP_URI_BY_TYPE.url}/${urlAsBase64WithoutPadding}`,
     method: 'GET',
@@ -509,7 +510,7 @@ const _processLookupItem = (
     return {
       entity,
       data: {
-        summary: ['No Information in VirusTotal'],
+        summary: ['VT has not seen or scanned'],
         details: {
           noInfoMessage: true
         }
@@ -550,7 +551,9 @@ const _processLookupItem = (
           fp.uniq,
           fp.slice(0, 3)
         )(scans),
-        ...(!totalMalicious && showNoInfoTag ? ['No Information in VirusTotal'] : [])
+        ...(!totalMalicious && showNoInfoTag
+          ? ['Virustotal has not seen or scanned this IOC']
+          : [])
       ],
       details: {
         type,
@@ -740,8 +743,9 @@ function _createJsonErrorObject(msg, pointer, httpCode, code, title, meta) {
   return error;
 }
 
-function onDetails(lookupObject, options, cb) {
+async function onDetails(lookupObject, options, cb) {
   const entity = fp.get('entity', lookupObject);
+
   if (fp.get('entity.isIP', lookupObject) || fp.get('entity.isDomain', lookupObject)) {
     const type = fp.get('entity.isIP', lookupObject) ? 'ip' : 'domain';
 
@@ -851,16 +855,35 @@ function onDetails(lookupObject, options, cb) {
       headers: { 'x-apikey': options.apiKey }
     };
 
-    requestWithDefaults(fileNameOptions, (err, response, body) => {
+    let behaviourSummaryOptions = {
+      uri: `https://www.virustotal.com/api/v3/files/${entity.value}/behaviour_summary`,
+      method: 'GET',
+      headers: { 'x-apikey': options.apiKey }
+    };
+
+    requestWithDefaults(behaviourSummaryOptions, (err, response, body) => {
       _handleRequestError(err, response, body, options, (err, result) => {
         if (err) {
           Logger.error(err, `Error Looking up ${_.startCase(type)}`);
           return done(err);
         }
 
-        lookupObject.data.details.fileNames = result.data.attributes.names;
+        lookupObject.data.details.behaviorSummary = result.data;
 
-        cb(null, lookupObject.data);
+        // cb(null, lookupObject.data);
+        requestWithDefaults(fileNameOptions, (err, response, body) => {
+          _handleRequestError(err, response, body, options, (err, result) => {
+            if (err) {
+              Logger.error(err, `Error Looking up ${_.startCase(type)}`);
+              return done(err);
+            }
+
+            lookupObject.data.details.fileNames = result.data.attributes.names;
+          });
+
+          Logger.trace({ OBJ_RESPONSE: lookupObject });
+          cb(null, lookupObject.data);
+        });
       });
     });
   } else {
