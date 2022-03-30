@@ -870,7 +870,6 @@ async function onDetails(lookupObject, options, cb) {
 
         lookupObject.data.details.behaviorSummary = result.data;
 
-        // cb(null, lookupObject.data);
         requestWithDefaults(fileNameOptions, (err, response, body) => {
           _handleRequestError(err, response, body, options, (err, result) => {
             if (err) {

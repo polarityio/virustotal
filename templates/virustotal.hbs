@@ -205,9 +205,9 @@
     {{#if block.isLoadingDetails}}
       <span class='p-footnote'>Loading Highlights ...</span>
     {{else}}
-      <div class="p-link mt-2">
-        <a href="{{details.detailsLink}}">View Details in VirusTotal
-          {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+      <div class='p-link mt-2'>
+        <a href='{{details.detailsLink}}'>View Details in VirusTotal
+          {{fa-icon 'external-link-square' class='external-link-icon'}}</a>
       </div>
       {{#if block.data.details.fileNames}}
         <div class='p-title'>
@@ -283,22 +283,6 @@
           <span>No behaviorSummary found</span>
         {{/if}}
       {{/if}}
-
-      {{!-- {{#if showFilesOpened}}
-        {{#if block.data.details.behaviorSummary}}
-          <div class='p-title'>
-            {{fa-icon 'laptop' fixedWidth=true}}
-            behaviorSummary
-          </div>
-          {{#each block.data.details.behaviorSummary.files_opened as |file index|}}
-            <div class='name-list'>
-              <span class='p-value'>{{file}}</span>
-            </div>
-          {{/each}}
-        {{else}}
-          <span>No behaviorSummary found</span>
-        {{/if}}
-      {{/if}} --}}
 
     {{/if}}
   {{/if}}
