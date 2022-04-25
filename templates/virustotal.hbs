@@ -134,6 +134,7 @@
     <div class='toggle-header'>
       <span class='p-action' {{action 'toggleShowResults' 'showScanResults'}}>
         {{fa-icon 'laptop' fixedWidth=true}}
+        {{#unless block.userOptions.showNoDetections}}Positive {{/unless}}
         Scan Results ({{details.positives}}
         of
         {{details.total}})
@@ -157,43 +158,45 @@
                 </td>
               </tr>
             {{/each}}
-            {{#each details.negativeScans as |negativeScan|}}
-              <tr>
-                <td>
-                  <span class='p-key'>{{negativeScan.name}} </span>
-                </td>
-                <td>
-                  <span class='p-value'>
-                    {{#if (eq negativeScan.result 'Unrated')}}
-                      {{fa-icon 'question' class='p-grey table-icon' fixedWidth=true}}
-                    {{else}}
+            {{#if block.userOptions.showNoDetections}}
+              {{#each details.negativeScans as |negativeScan|}}
+                <tr>
+                  <td>
+                    <span class='p-key'>{{negativeScan.name}} </span>
+                  </td>
+                  <td>
+                    <span class='p-value'>
+                      {{#if (eq negativeScan.result 'Unrated')}}
+                        {{fa-icon 'question' class='p-grey table-icon' fixedWidth=true}}
+                      {{else}}
+                        {{#if (eq negativeScan.result 'type-unsupported')}}
+                          {{fa-icon 'eye-slash' class='p-grey table-icon' fixedWidth=true}}
+                        {{else}}
+                          {{#if (eq negativeScan.result 'Suspicious')}}
+                            {{fa-icon 'info' class='p-orange table-icon' fixedWidth=true}}
+                          {{else}}
+                            {{fa-icon 'check' class='p-green table-icon' fixedWidth=true}}
+                          {{/if}}
+                        {{/if}}
+                      {{/if}}
                       {{#if (eq negativeScan.result 'type-unsupported')}}
-                        {{fa-icon 'eye-slash' class='p-grey table-icon' fixedWidth=true}}
+                        <span class='p-grey'>Unable to process file type</span>
                       {{else}}
                         {{#if (eq negativeScan.result 'Suspicious')}}
-                          {{fa-icon 'info' class='p-orange table-icon' fixedWidth=true}}
+                          <span class='p-orange'>Suspicious</span>
                         {{else}}
-                          {{fa-icon 'check' class='p-green table-icon' fixedWidth=true}}
+                          {{#if (not negativeScan.result)}}
+                            Undetected
+                          {{else}}
+                            {{negativeScan.result}}
+                          {{/if}}
                         {{/if}}
                       {{/if}}
-                    {{/if}}
-                    {{#if (eq negativeScan.result 'type-unsupported')}}
-                      <span class='p-grey'>Unable to process file type</span>
-                    {{else}}
-                      {{#if (eq negativeScan.result 'Suspicious')}}
-                        <span class='p-orange'>Suspicious</span>
-                      {{else}}
-                        {{#if (not negativeScan.result)}}
-                          Undetected
-                        {{else}}
-                          {{negativeScan.result}}
-                        {{/if}}
-                      {{/if}}
-                    {{/if}}
-                  </span>
-                </td>
-              </tr>
-            {{/each}}
+                    </span>
+                  </td>
+                </tr>
+              {{/each}}
+            {{/if}}
           </tbody>
         </table>
       </div>

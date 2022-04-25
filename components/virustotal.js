@@ -105,7 +105,7 @@ polarity.export = PolarityComponent.extend({
       this.get('details.behaviorSummary.registry_keys_opened')
     );
     this.set('showFilesOpened', this.get('details.behaviorSummary.files_opened'));
-    this.set('showScanResults', this.get('details.total') < 15);
+    this.set('showScanResults', this.get('block.userOptions.showNoDetections') === false ? this.get('details.positiveScans.length') < 15 : this.get('details.total') < 15);
     this.set(
       'numUrlsShown',
       Math.min(this.get('maxUrlsToShow'), this.get('details.detectedUrls.length'))
