@@ -764,7 +764,7 @@ async function onDetails(lookupObject, options, cb) {
       _handleRequestError(err, response, body, options, function (err, refFilesResult) {
         if (err) {
           Logger.error(err, `Error Looking up ${_.startCase(type)}`);
-          return done(err);
+          return cb(err);
         }
 
         if (refFilesResult.data) {
@@ -820,7 +820,7 @@ async function onDetails(lookupObject, options, cb) {
           _handleRequestError(err, response, body, options, function (err, whoIsResult) {
             if (err) {
               Logger.error(err, `Error Looking up ${_.startCase(type)}`);
-              return done(err);
+              return cb(err);
             }
 
             if (whoIsResult.data) {
@@ -864,8 +864,8 @@ async function onDetails(lookupObject, options, cb) {
     requestWithDefaults(behaviourSummaryOptions, (err, response, body) => {
       _handleRequestError(err, response, body, options, (err, result) => {
         if (err) {
-          Logger.error(err, `Error Looking up ${_.startCase(type)}`);
-          return done(err);
+          Logger.error(err, `Error Looking up ${entity.type}`);
+          return cb(err);
         }
 
         lookupObject.data.details.behaviorSummary = result.data;
@@ -873,8 +873,8 @@ async function onDetails(lookupObject, options, cb) {
         requestWithDefaults(fileNameOptions, (err, response, body) => {
           _handleRequestError(err, response, body, options, (err, result) => {
             if (err) {
-              Logger.error(err, `Error Looking up ${_.startCase(type)}`);
-              return done(err);
+              Logger.error(err, `Error Looking up ${entity.type}`);
+              return cb(err);
             }
 
             lookupObject.data.details.fileNames = result.data.attributes.names;
