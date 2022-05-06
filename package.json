@@ -1,7 +1,7 @@
 {
   "main": "./integration.js",
   "name": "VirusTotal",
-  "version": "3.5.1-beta",
+  "version": "3.6.1",
   "private": true,
   "dependencies": {
     "async": "^3.2.0",

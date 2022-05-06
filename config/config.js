@@ -33,7 +33,7 @@ module.exports = {
    * @type Array
    * @optional
    */
-  styles: ['./styles/virustotal.less'],
+  styles: ['./styles/styles.less'],
   /**
    * Provide custom component logic and template for rendering the integration details block.  If you do not
    * provide a custom template and/or component then the integration will display data as a table of key value
@@ -44,10 +44,18 @@ module.exports = {
    */
   block: {
     component: {
-      file: './components/virustotal.js'
+      file: './components/block.js'
     },
     template: {
-      file: './templates/virustotal.hbs'
+      file: './templates/block.hbs'
+    }
+  },
+  summary: {
+    component: {
+      file: './components/summary.js'
+    },
+    template: {
+      file: './templates/summary.hbs'
     }
   },
   settings: {
@@ -103,16 +111,6 @@ module.exports = {
       adminOnly: false
     },
     {
-      key: 'showNoInfoTag',
-      name: 'Show "No Information in VirusTotal"',
-      description:
-        'If checked, this option will make it so when there are no results in Virus Total it will always display the tag summary "No Information in VirusTotal".',
-      default: false,
-      type: 'boolean',
-      userCanEdit: true,
-      adminOnly: false
-    },
-    {
       key: 'showNoDetections',
       name: 'Show All File Scanner AV Results',
       description:
@@ -123,11 +121,21 @@ module.exports = {
       adminOnly: false
     },
     {
+      key: 'showNoInfoTag',
+      name: 'Return Unscanned or Unseen Results',
+      description:
+        'If checked, the integration will return the summary tag "Has not been seen or scanned" if VT has not seen or scanned the indicator before.',
+      default: true,
+      type: 'boolean',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
       key: 'showHashesWithNoDetections',
       name: 'Show Files (Hashes) with No Detections',
       description:
         'If checked, the integration will show results for files that have no positive detections.',
-      default: false,
+      default: true,
       type: 'boolean',
       userCanEdit: true,
       adminOnly: false
@@ -136,8 +144,8 @@ module.exports = {
       key: 'showIpsWithNoDetections',
       name: 'Show IP Addresses with No Detections',
       description:
-        'If checked, the integration will show results for IP addresses that have no positive detections.  By default, the integration will not show IP reports with no positive detections even if the IP address in question has a resolved hostname. ',
-      default: false,
+        'If checked, the integration will show results for IP addresses that have no positive detections.',
+      default: true,
       type: 'boolean',
       userCanEdit: true,
       adminOnly: false
@@ -147,7 +155,7 @@ module.exports = {
       name: 'Show Domains with No Detections',
       description:
         'If checked, the integration will show results for Domains that have no positive detections.',
-      default: false,
+      default: true,
       type: 'boolean',
       userCanEdit: true,
       adminOnly: false
@@ -157,7 +165,7 @@ module.exports = {
       name: 'Show URLs with No Detections',
       description:
         'If checked, the integration will show results for URLs that have no positive detections.',
-      default: false,
+      default: true,
       type: 'boolean',
       userCanEdit: true,
       adminOnly: false
@@ -228,6 +236,27 @@ module.exports = {
       description:
         'IPs that match the given regex will not be looked up (if blank, all IPs will be looked up).  Do not wrap your regex in forward slashes. This option must be set to "Only Admins Can View and Edit".',
       default: '',
+      type: 'text',
+      userCanEdit: false,
+      adminOnly: true
+    },
+    {
+      key: 'baselineInvestigationThresholdEnabled',
+      name: 'Enable Baseline Investigation Threshold',
+      description:
+        'If checked, the "Baseline Investigation Threshold Configuration" will be enabled.  Defaults to unchecked.  This option must be set to "Only admins can view and edit".',
+      default: false,
+      type: 'boolean',
+      userCanEdit: false,
+      adminOnly: true
+    },
+    {
+      key: 'baselineInvestigationThreshold',
+      name: 'Baseline Investigation Threshold Configuration',
+      description:
+        'Comma delimited list of positive detection rules which can be used to customize the appearance of the positive detection summary tag.  Each rule consists of a number range (e.g., 5-10), followed by a colon and then the message to display.  Rules can optionally include a level of either "warn" or "danger". If the number of positive detections for an indicator falls within a specified range, the configured message is shown in a summary tag.  Default value is "0:No Detections,  1-3:warn:Suspicious - Review,  4-999:danger:Likely Malicious". This option must be set to "Only admins can view and edit".',
+      default:
+        '0:No Detections,  1-3:warn:Suspicious - Review,  4-999:danger:Likely Malicious',
       type: 'text',
       userCanEdit: false,
       adminOnly: true

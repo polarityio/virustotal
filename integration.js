@@ -13,7 +13,8 @@ let Logger;
 let pendingLookupCache;
 let domainUrlBlocklistRegex = null;
 let ipBlocklistRegex = null;
-
+let compiledThresholdRules = [];
+let previousBaselineInvestigationThreshold = null;
 let doLookupLogging;
 let lookupHashSet;
 let lookupIpSet;
@@ -36,8 +37,6 @@ const debugLookupStats = {
 };
 
 const throttleCache = new Map();
-
-const BUG_ICON = `<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bug" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="svg-inline--fa fa-bug fa-w-16"><path fill="currentColor" d="M511.988 288.9c-.478 17.43-15.217 31.1-32.653 31.1H424v16c0 21.864-4.882 42.584-13.6 61.145l60.228 60.228c12.496 12.497 12.496 32.758 0 45.255-12.498 12.497-32.759 12.496-45.256 0l-54.736-54.736C345.886 467.965 314.351 480 280 480V236c0-6.627-5.373-12-12-12h-24c-6.627 0-12 5.373-12 12v244c-34.351 0-65.886-12.035-90.636-32.108l-54.736 54.736c-12.498 12.497-32.759 12.496-45.256 0-12.496-12.497-12.496-32.758 0-45.255l60.228-60.228C92.882 378.584 88 357.864 88 336v-16H32.666C15.23 320 .491 306.33.013 288.9-.484 270.816 14.028 256 32 256h56v-58.745l-46.628-46.628c-12.496-12.497-12.496-32.758 0-45.255 12.498-12.497 32.758-12.497 45.256 0L141.255 160h229.489l54.627-54.627c12.498-12.497 32.758-12.497 45.256 0 12.496 12.497 12.496 32.758 0 45.255L424 197.255V256h56c17.972 0 32.484 14.816 31.988 32.9zM257 0c-61.856 0-112 50.144-112 112h224C369 50.144 318.856 0 257 0z" class=""></path></svg>`;
 const IGNORED_IPS = new Set(['127.0.0.1', '255.255.255.255', '0.0.0.0']);
 
 const LOOKUP_URI_BY_TYPE = {
@@ -61,6 +60,24 @@ const TYPES_BY_SHOW_NO_DETECTIONS = {
  * @param cb
  */
 function doLookup(entities, options, cb) {
+  // if the threshold rules are disabled then we want an empty rule set (empty array)
+  if (options.baselineInvestigationThresholdEnabled === false) {
+    compiledThresholdRules = [];
+  }
+
+  // We only want to compile our threshold rules if the option has changed
+  // The option is intended to be admin-only
+  if (
+    options.baselineInvestigationThresholdEnabled &&
+    (options.baselineInvestigationThreshold !== previousBaselineInvestigationThreshold ||
+      previousBaselineInvestigationThreshold === null)
+  ) {
+    compiledThresholdRules = parseBaselineInvestigationThreshold(
+      options.baselineInvestigationThreshold
+    );
+    previousBaselineInvestigationThreshold = options.baselineInvestigationThreshold;
+  }
+
   if (throttleCache.has(options.apiKey)) {
     // the throttleCache stores whether or not we've shown the throttle warning message for this throttle duration
     // We only want to show the message once per throttleDuration (defaults to 1 minute).
@@ -227,6 +244,8 @@ function doLookup(entities, options, cb) {
 
       ['hashLookups', 'ipLookups', 'domainLookups', 'urlLookups'].forEach((key) =>
         lookupResults[key].forEach(function (lookupResult) {
+          lookupResult.data.details.compiledBaselineInvestigationRules =
+            compiledThresholdRules;
           pendingLookupCache.removeRunningLookup(fp.get('entity.value', lookupResult));
           pendingLookupCache.executePendingLookups(lookupResult);
           combinedResults.push(lookupResult);
@@ -339,16 +358,14 @@ function _handleRequestError(err, response, body, options, cb) {
         '2A',
         'VirusTotal HTTP Request Failed',
         {
-          err: err,
-          response: response,
-          body: body
+          err: err
         }
       )
     );
     return;
   }
 
-  if (response.statusCode === 204) {
+  if (response.statusCode === 429) {
     // This means the user has reached their request limit for the API key.  In this case,
     // we don't treat it as an error and just return no results.  In the future, integrations
     // might allow non-error messages to be passed back to the user such as (VT query limit reached)
@@ -370,11 +387,12 @@ function _handleRequestError(err, response, body, options, cb) {
     return;
   }
 
-  if (response.statusCode === 403) {
-    cb('You do not have permission to access VirusTotal.  Please check your API key');
+  if (response.statusCode === 403 || response.statusCode === 401) {
+    cb('You do not have permission to access VirusTotal.  Validate your API key.');
     return;
   }
 
+  // 404 is returned if the entity has no result at all
   if (response.statusCode === 404) return cb();
 
   if (response.statusCode !== 200) {
@@ -494,27 +512,36 @@ const _processLookupItem = (
   )(lastAnalysisStats);
   const totalMalicious = fp.get('malicious', lastAnalysisStats);
 
-  if (
-    !result ||
-    !totalResults ||
-    (type === 'url' && !attributes.last_http_response_code) ||
-    (!totalMalicious && !showEntitiesWithNoDetections && !showNoInfoTag)
-  ) {
+  // Check for no data
+  // If there is no data, then VT does not know anything about the entity in question
+  if (!result || !data || !totalResults) {
+    // if `showNoInfoTag` is true, then the user wants to see a result everytime
+    // indicating that there is no information in VT
+    if (showNoInfoTag) {
+      return {
+        entity,
+        data: {
+          summary: ['has not seen or scanned'],
+          details: {
+            noInfoMessage: true
+          }
+        }
+      };
+    } else {
+      // The user does not want to see misses so we return a normal miss result
+      return {
+        entity,
+        data: null
+      };
+    }
+  }
+
+  // If there are no positive detections and the user has hidden results with zero positive detections
+  // return a miss
+  if (!totalMalicious && !showEntitiesWithNoDetections) {
     return {
       entity,
       data: null
-    };
-  }
-
-  if (!totalMalicious && !showEntitiesWithNoDetections && showNoInfoTag) {
-    return {
-      entity,
-      data: {
-        summary: ['VT has not seen or scanned'],
-        details: {
-          noInfoMessage: true
-        }
-      }
     };
   }
 
@@ -544,29 +571,29 @@ const _processLookupItem = (
     entity,
     data: {
       summary: [
-        `${totalMalicious} ${BUG_ICON}/ ${totalResults}`,
         ...fp.flow(
           fp.filter(fp.get('detected')),
           fp.map(fp.get('result')),
           fp.uniq,
           fp.slice(0, 3)
-        )(scans),
-        ...(!totalMalicious && showNoInfoTag
-          ? ['Virustotal has not seen or scanned this IOC']
-          : [])
+        )(scans)
       ],
       details: {
         type,
         detectionsLink: `${coreLink}/detection`,
         relationsLink: `${coreLink}/relations`,
         detailsLink: `${coreLink}/details`,
+        communityLink: `${coreLink}/community`,
+        behaviorLink: `${coreLink}/behavior`,
         total: totalResults,
+        reputation: attributes.reputation,
         scan_date: new Date(attributes.last_modification_date * 1000),
         positives: totalMalicious,
         positiveScans: fp.flow(
           fp.filter(fp.get('detected')),
           fp.orderBy('result', 'desc')
         )(scans),
+        names: attributes.names,
         negativeScans: fp.flow(
           fp.filter(({ detected }) => !detected),
           fp.orderBy('result', 'desc')
@@ -628,7 +655,9 @@ const DETAILS_FORMATS = {
   ],
   domain: [
     { key: 'Basic Properties', isTitle: true },
+    { key: 'Reputation', path: 'reputation' },
     { key: 'Registrar', path: 'registrar' },
+    { key: 'Last Modified', path: 'last_modification_date', isDate: true },
     {
       key: 'Last DNS Records',
       path: 'last_dns_records',
@@ -706,6 +735,80 @@ function _lookupEntityType(type, entity, options, done) {
   });
 }
 
+function parseBaselineInvestigationThreshold(bti) {
+  const rules = bti.split(',');
+  const compiledRules = [];
+  rules.forEach((rule) => {
+    const parts = rule.split(':');
+    if (parts.length !== 2 && parts.length !== 3) {
+      throw `Invalid rule [${rule}]. Rule must be of the format <range>:<message> or <range>:<level>:<message>`;
+    }
+    let range, level, message;
+    range = splitBtiRange(rule, parts[0]);
+
+    if (parts.length === 3) {
+      level = parts[1].trim();
+      message = parts[2].trim();
+    } else {
+      level = 'none';
+      message = parts[1].trim();
+    }
+
+    if (level !== 'warn' && level !== 'danger' && level !== 'none') {
+      throw `Invalid rule [${rule}]. Level [${level}] must be either "warn" or "danger".`;
+    }
+
+    compiledRules.push({
+      message,
+      level,
+      ...range
+    });
+  });
+  return compiledRules;
+}
+
+/**
+ * Takes a range in the format `<number>-<number>` and turns it into a range object
+ * of the form:
+ * ```
+ * {
+ *   min: <number>,
+ *   max: <number>
+ * }
+ * ```
+ * @param range
+ * @returns {{min: number, max: number}}
+ */
+function splitBtiRange(rule, range) {
+  let ranges = range.split('-');
+  if (ranges.length !== 1 && ranges.length !== 2) {
+    throw `Invalid range [${range}] on rule [${rule}].  Range must be a single number or a range of the format <number>-<number>`;
+  }
+
+  if (isNaN(ranges[0])) {
+    throw `Invalid range [${range}] on rule [${rule}]. The value [${ranges[0]}] must be a number`;
+  }
+
+  if (ranges.length === 1) {
+    return {
+      min: +ranges[0],
+      max: +ranges[0]
+    };
+  }
+  if (ranges.length === 2) {
+    if (isNaN(ranges[1])) {
+      throw `Invalid range [${range}] on rule [${rule}]. The value [${ranges[1]}] must be a number`;
+    }
+    if (+ranges[0] > +ranges[1]) {
+      throw `Invalid range [${range}] on rule [${rule}]. The value [${ranges[0]}] must be greater than the value [${ranges[1]}]`;
+    }
+    return {
+      min: +ranges[0],
+      max: +ranges[1]
+    };
+  }
+}
+
 /**
  * Helper method that creates a fully formed JSON payload for a single error
  * @param msg
@@ -743,151 +846,166 @@ function _createJsonErrorObject(msg, pointer, httpCode, code, title, meta) {
   return error;
 }
 
-async function onDetails(lookupObject, options, cb) {
-  const entity = fp.get('entity', lookupObject);
+async function getWhois(entity, options) {
+  return new Promise((resolve, reject) => {
+    if (entity.isIP || entity.isDomain) {
+      const type = entity.isIP ? 'ip' : 'domain';
+      const relationsWhoIsRequestOptions = {
+        uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/historical_whois`,
+        method: 'GET',
+        headers: { 'x-apikey': options.apiKey }
+      };
 
-  if (fp.get('entity.isIP', lookupObject) || fp.get('entity.isDomain', lookupObject)) {
-    const type = fp.get('entity.isIP', lookupObject) ? 'ip' : 'domain';
+      Logger.debug(
+        { relationsWhoIsRequestOptions },
+        'Request Options for Type historical_whois Relations Lookup'
+      );
 
-    let relationsRefFilesRequestOptions = {
-      uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/referrer_files`,
-      method: 'GET',
-      headers: { 'x-apikey': options.apiKey }
-    };
+      requestWithDefaults(relationsWhoIsRequestOptions, function (err, response, body) {
+        _handleRequestError(err, response, body, options, function (err, whoIsResult) {
+          if (err) {
+            Logger.error(err, `Error Looking up ${_.startCase(type)}`);
+            return reject(err);
+          }
 
-    Logger.debug(
-      { relationsRefFilesRequestOptions },
-      'Request Options for Type referrer_files Relations Lookup'
-    );
+          if (whoIsResult.data) {
+            const historicalWhoIs = fp.flow(
+              fp.getOr([], 'data'),
+              fp.reduce((accum, whoIsLookup) => {
+                // filter out DNS entries with no results.  We check for this
+                // by looking for a last_updated value that is null
+                if (fp.get('attributes.last_updated', whoIsLookup)) {
+                  accum.push({
+                    last_updated: fp.flow(
+                      fp.get('attributes.last_updated'),
+                      (x) => new Date(x * 1000)
+                    )(whoIsLookup),
+                    ...fp.get('attributes.whois_map', whoIsLookup)
+                  });
+                }
+                return accum;
+              }, [])
+            )(whoIsResult);
 
-    requestWithDefaults(relationsRefFilesRequestOptions, function (err, response, body) {
-      _handleRequestError(err, response, body, options, function (err, refFilesResult) {
-        if (err) {
-          Logger.error(err, `Error Looking up ${_.startCase(type)}`);
-          return cb(err);
-        }
-
-        if (refFilesResult.data) {
-          const referenceFiles = fp.flow(
-            fp.getOr([], 'data'),
-            fp.map((referenceFile) => ({
-              link:
-                referenceFile.attributes &&
-                `https://www.virustotal.com/gui/${referenceFile.type}/${referenceFile.id}/detection`,
-              name: fp.getOr(
-                referenceFile.id,
-                'attributes.meaningful_name',
-                referenceFile
-              ),
-              type: fp.getOr(referenceFile.type, 'attributes.type_tag', referenceFile),
-              detections: referenceFile.attributes
-                ? `${fp.getOr(
-                    0,
-                    'attributes.last_analysis_stats.malicious',
-                    referenceFile
-                  )} / ${fp.getOr(
-                    0,
-                    'attributes.last_analysis_stats.undetected',
-                    referenceFile
-                  )}`
-                : '-',
-              scannedDate: fp.flow(
-                fp.getOr('-', 'attributes.last_analysis_date'),
-                (x) => new Date(x * 1000)
-              )(referenceFile)
-            }))
-          )(refFilesResult);
-
-          lookupObject.data.details = {
-            ...fp.get('data.details', lookupObject),
-            expandedWhoisMap: {},
-            referenceFiles
-          };
-        }
-
-        let relationsWhoIsRequestOptions = {
-          uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/historical_whois`,
-          method: 'GET',
-          headers: { 'x-apikey': options.apiKey }
-        };
-
-        Logger.debug(
-          { relationsWhoIsRequestOptions },
-          'Request Options for Type historical_whois Relations Lookup'
-        );
-
-        requestWithDefaults(relationsWhoIsRequestOptions, function (err, response, body) {
-          _handleRequestError(err, response, body, options, function (err, whoIsResult) {
-            if (err) {
-              Logger.error(err, `Error Looking up ${_.startCase(type)}`);
-              return cb(err);
-            }
-
-            if (whoIsResult.data) {
-              const historicalWhoIs = fp.flow(
-                fp.getOr([], 'data'),
-                fp.map((whoIsLookup) => ({
-                  last_updated: fp.flow(
-                    fp.get('attributes.last_updated'),
-                    (x) => new Date(x * 1000)
-                  )(whoIsLookup),
-                  ...fp.get('attributes.whois_map', whoIsLookup)
-                }))
-              )(whoIsResult);
-
-              lookupObject.data.details = {
-                ...fp.get('data.details', lookupObject),
-                expandedWhoisMap: {},
-                historicalWhoIs
-              };
-            }
-
-            Logger.trace({ lookupObject }, 'lookupObject');
-            cb(null, lookupObject.data);
-          });
+            resolve(historicalWhoIs);
+          } else {
+            resolve([]);
+          }
         });
       });
-    });
-  } else if (entity.isMD5 || entity.isSHA1 || entity.isSHA256) {
-    let fileNameOptions = {
-      uri: `https://www.virustotal.com/api/v3/files/${entity.value}`,
-      method: 'GET',
-      headers: { 'x-apikey': options.apiKey }
-    };
+    } else {
+      resolve([]);
+    }
+  });
+}
 
-    let behaviourSummaryOptions = {
-      uri: `https://www.virustotal.com/api/v3/files/${entity.value}/behaviour_summary`,
-      method: 'GET',
-      headers: { 'x-apikey': options.apiKey }
-    };
+/**
+ * Fetches additional relations data for domains and IP entity types
+ *
+ * @param entity
+ * @param options
+ */
+async function getRelations(entity, options) {
+  return new Promise((resolve, reject) => {
+    if (entity.isIP || entity.isDomain) {
+      const type = entity.isIP ? 'ip' : 'domain';
 
-    requestWithDefaults(behaviourSummaryOptions, (err, response, body) => {
-      _handleRequestError(err, response, body, options, (err, result) => {
-        if (err) {
-          Logger.error(err, `Error Looking up ${entity.type}`);
-          return cb(err);
-        }
+      let relationsRefFilesRequestOptions = {
+        uri: `${LOOKUP_URI_BY_TYPE[type]}/${entity.value}/referrer_files`,
+        method: 'GET',
+        headers: { 'x-apikey': options.apiKey }
+      };
 
-        lookupObject.data.details.behaviorSummary = result.data;
+      Logger.debug(
+        { relationsRefFilesRequestOptions },
+        'Request Options for Type referrer_files Relations Lookup'
+      );
 
-        requestWithDefaults(fileNameOptions, (err, response, body) => {
-          _handleRequestError(err, response, body, options, (err, result) => {
-            if (err) {
-              Logger.error(err, `Error Looking up ${entity.type}`);
-              return cb(err);
+      requestWithDefaults(
+        relationsRefFilesRequestOptions,
+        function (err, response, body) {
+          _handleRequestError(
+            err,
+            response,
+            body,
+            options,
+            function (err, refFilesResult) {
+              if (err) {
+                Logger.error(err, `Error Looking up ${_.startCase(type)}`);
+                return reject(err);
+              }
+
+              if (refFilesResult.data) {
+                const referenceFiles = fp.flow(
+                  fp.getOr([], 'data'),
+                  fp.map((referenceFile) => ({
+                    link:
+                      referenceFile.attributes &&
+                      `https://www.virustotal.com/gui/${referenceFile.type}/${referenceFile.id}/detection`,
+                    name: fp.getOr(
+                      referenceFile.id,
+                      'attributes.meaningful_name',
+                      referenceFile
+                    ),
+                    type: fp.getOr(
+                      referenceFile.type,
+                      'attributes.type_tag',
+                      referenceFile
+                    ),
+                    detections: referenceFile.attributes
+                      ? `${fp.getOr(
+                          0,
+                          'attributes.last_analysis_stats.malicious',
+                          referenceFile
+                        )} / ${fp.getOr(
+                          0,
+                          'attributes.last_analysis_stats.undetected',
+                          referenceFile
+                        )}`
+                      : '-',
+                    scannedDate: fp.flow(
+                      fp.getOr('-', 'attributes.last_analysis_date'),
+                      (x) => new Date(x * 1000)
+                    )(referenceFile)
+                  }))
+                )(refFilesResult);
+                resolve(referenceFiles);
+              } else {
+                resolve([]);
+              }
             }
+          );
+        }
+      );
+    } else {
+      resolve([]);
+    }
+  });
+}
 
-            lookupObject.data.details.fileNames = result.data.attributes.names;
-          });
+function getBehaviors(entity, options) {
+  return new Promise((resolve, reject) => {
+    if (entity.isMD5 || entity.isSHA1 || entity.isSHA256) {
+      let behaviourSummaryOptions = {
+        uri: `https://www.virustotal.com/api/v3/files/${entity.value}/behaviour_summary`,
+        method: 'GET',
+        headers: { 'x-apikey': options.apiKey }
+      };
 
-          Logger.trace({ OBJ_RESPONSE: lookupObject });
-          cb(null, lookupObject.data);
+      requestWithDefaults(behaviourSummaryOptions, (err, response, body) => {
+        _handleRequestError(err, response, body, options, (err, result) => {
+          if (err) {
+            Logger.error(err, `Error Looking up ${entity.type}`);
+            return reject(err);
+          }
+
+          resolve(result.data);
         });
       });
-    });
-  } else {
-    cb(null, lookupObject.data);
-  }
+    } else {
+      resolve([]);
+    }
+  });
 }
 
 function startup(logger) {
@@ -937,10 +1055,6 @@ function startup(logger) {
     defaults.proxy = config.request.proxy;
   }
 
-  // if (typeof config.request.rejectUnauthorized === 'boolean') {
-  defaults.rejectUnauthorized = false;
-  // }
-
   defaults.json = true;
 
   requestWithDefaults = request.defaults(defaults);
@@ -974,6 +1088,54 @@ function _logLookupStats() {
   }
 }
 
+function errorToPojo(err) {
+  if (err instanceof Error) {
+    return {
+      // Pull all enumerable properties, supporting properties on custom Errors
+      ...err,
+      // Explicitly pull Error's non-enumerable properties
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      detail: err.detail ? err.detail : 'Google compute engine had an error'
+    };
+  }
+  return err;
+}
+
+async function onMessage(payload, options, cb) {
+  const { entity, action } = payload;
+  switch (action) {
+    case 'GET_RELATIONS':
+      try {
+        const relations = await getRelations(entity, options);
+        Logger.trace({ relations }, 'GET_RELATIONS');
+        cb(null, relations);
+      } catch (error) {
+        cb(error);
+      }
+      break;
+    case 'GET_BEHAVIORS':
+      try {
+        const behaviors = await getBehaviors(entity, options);
+        Logger.trace({ behaviors }, 'GET_BEHAVIORS');
+        cb(null, behaviors);
+      } catch (error) {
+        cb(error);
+      }
+      break;
+    case 'GET_WHOIS':
+      try {
+        const whois = await getWhois(entity, options);
+        Logger.trace({ whois }, 'GET_WHOIS');
+        cb(null, whois);
+      } catch (error) {
+        cb(error);
+      }
+      break;
+  }
+}
+
 function validateOptions(userOptions, cb) {
   let errors = [];
   if (
@@ -995,12 +1157,22 @@ function validateOptions(userOptions, cb) {
     });
   }
 
+  try {
+    parseBaselineInvestigationThreshold(userOptions.baselineInvestigationThreshold.value);
+  } catch (e) {
+    Logger.error(e);
+    errors.push({
+      key: 'baselineInvestigationThreshold',
+      message: e.toString()
+    });
+  }
+
   cb(null, errors);
 }
 
 module.exports = {
   doLookup,
-  onDetails,
   startup,
+  onMessage,
   validateOptions
 };
