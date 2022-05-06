@@ -245,7 +245,7 @@ module.exports = {
       name: 'Enable Baseline Investigation Threshold',
       description:
         'If checked, the "Baseline Investigation Threshold Configuration" will be enabled.  Defaults to unchecked.  This option must be set to "Only admins can view and edit".',
-      default: false,
+      default: true,
       type: 'boolean',
       userCanEdit: false,
       adminOnly: true
