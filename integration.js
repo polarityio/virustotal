@@ -63,6 +63,7 @@ function doLookup(entities, options, cb) {
   // if the threshold rules are disabled then we want an empty rule set (empty array)
   if (options.baselineInvestigationThresholdEnabled === false) {
     compiledThresholdRules = [];
+    previousBaselineInvestigationThreshold = null;
   }
 
   // We only want to compile our threshold rules if the option has changed
