@@ -244,8 +244,10 @@ function doLookup(entities, options, cb) {
 
       ['hashLookups', 'ipLookups', 'domainLookups', 'urlLookups'].forEach((key) =>
         lookupResults[key].forEach(function (lookupResult) {
-          lookupResult.data.details.compiledBaselineInvestigationRules =
-            compiledThresholdRules;
+          if (lookupResult && lookupResult.data && lookupResult.data.details) {
+            lookupResult.data.details.compiledBaselineInvestigationRules =
+              compiledThresholdRules;
+          }
           pendingLookupCache.removeRunningLookup(fp.get('entity.value', lookupResult));
           pendingLookupCache.executePendingLookups(lookupResult);
           combinedResults.push(lookupResult);
