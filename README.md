@@ -4,13 +4,9 @@ Polarity's VirusTotal integration gives users access to automated MD5, SHA1, SHA
 
 VirusTotal is a service that analyzes suspicious files and URLs and facilitates the quick detection of viruses, worms, trojans, and all kinds of malware.  For more information about VirusTotal please visit https://www.virustotal.com/.
 
-<div style="display:flex; justify-content:flex-start; align-items:center;">
-  <img width="366" alt="Integration Example URL" src="./assets/integration-example-url.png" />
-  <img width="350" alt="Integration Example MD5 Hash" src="./assets/integration-example-md5.png" />
-</div>
-<div style="display:flex; justify-content:flex-start; align-items:center;">
-  <img width="364" alt="Integration Example IP Address" src="./assets/integration-example-ip.png" />
-</div>
+| ![](assets/integration-example-ip.png) |![](/assets/integration-example-md5.png)|![](assets/integration-example-url.png)
+|---|---|--|
+|*IP Address Example* |*Hash Example*| *Domain Example*|
 
 ## VirusTotal Integration Options
 
@@ -18,11 +14,11 @@ VirusTotal is a service that analyzes suspicious files and URLs and facilitates 
 
 Your VirusTotal Premium API Key
 
-### Show "No Information in VirusTotal"
+### Return Unscanned or Unseen Results
 
-Default: false
+Default: true
 
-If checked, this option will make it so when there are no results in Virus Total it will always display the tag summary "No Information in VirusTotal".
+If checked, the integration will return the summary tag "Has not been seen or scanned" if VT has not seen or scanned the indicator before.
 
 
 ### Show All File Scanner AV Results
@@ -33,25 +29,25 @@ If checked, the integration will show all AV scanner results for files (hashes) 
 
 ### Show Files (Hashes) with No Detections
 
-Default: false
+Default: true
 
 If checked, the integration will show results for files that have no positive detections.
 
 ### Show IP Addresses with No Detections
 
-Default: false
+Default: true
 
 If checked, the integration will show results for IP addresses that have no positive detections. By default, the integration will not show IP reports with no positive detections even if the IP address in question has a resolved hostname.
 
 ### Show Domains with No Detections
 
-Default: false
+Default: true
 
 If checked, the integration will show results for Domains that have no positive detections.
 
 ### Show Urls with No Detections
 
-Default: false
+Default: true
 
 If checked, the integration will show results for Urls that have no positive detections.
 
@@ -89,6 +85,43 @@ Domains or URLs that match the given regex will not be looked up (if blank, all 
 ### IP Blocklist Regex
 
 IPs that match the given regex will not be looked up (if blank, all IPs will be looked up). Do not wrap your regex in forward slashes. This option must be set to "Only Admins Can View and Edit".
+
+### Enable Baseline Investigation Threshold
+
+If checked, the "Baseline Investigation Threshold Configuration" will be enabled. Defaults to unchecked. 
+
+**This option must be set to "Only admins can view and edit".**
+
+### Baseline Investigation Threshold Configuration
+
+Comma delimited list of positive detection rules which can be used to customize the appearance of the positive detection summary tag.  Each rule consists of a number range (e.g., 5-10), followed by a colon and then the message to display.  Rules can optionally include a level of either "warn" or "danger" after the range. If the number of positive detections for an indicator falls within a specified range, the configured message is shown in a summary tag.  Default value is "0:No Detections,  1-3:warn:Suspicious - Review,  4-999:danger:Likely Malicious". 
+
+**This option must be set to "Only admins can view and edit".**
+
+#### Examples
+
+Add the message "Possibly Benign" to any indicator with 0 detections:
+```
+0:Possibly Benign
+```
+
+Additionally, add the message "Suspicious" to any indicator with 1 to 4 positive detections: 
+```
+0:Possibly Benign, 1-4:Suspicious
+```
+
+Additionally, include a warning icon for "Suspicious" indicators:
+
+```
+0:Possibly Benign, 1-4:warn:Suspicious
+```
+
+Additionally, add the message "Likely Malicious" to any indicator with more than 5 positive detections and include a "danger" icon:
+
+```
+0:Possibly Benign, 1-4:warn:Suspicious, 5-999:danger:Likely Malicious
+```
+
 
 ## Installation Instructions
 

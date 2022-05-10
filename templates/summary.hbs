@@ -1,0 +1,18 @@
+{{#unless details.noInfoMessage}}
+  <span {{on "click" (optional this.scrollToIntegration)}} class="danger-summary-tag integration-summary-tag integration-background-color integration-border-color">
+    <span class="tag acronym integration-text-bold-color">{{block.acronym}}</span>
+    {{#if (eq baselineInvestigationThreshold.level "danger")}}
+      <span class="icon-container stripe-bg-danger">{{fa-icon icon="exclamation" fixedWidth=true}}</span>
+    {{else if (eq baselineInvestigationThreshold.level "warn")}}
+      <span class="icon-container stripe-bg-warning">{{fa-icon icon="exclamation" fixedWidth=true}}</span>
+    {{/if}}
+    <span class="data integration-text-color">{{#if baselineInvestigationThreshold}}<span class="summary-threshold-message">{{baselineInvestigationThreshold.message}}</span> {{/if}}{{details.positives}}{{fa-icon icon="bug" fixedWidth=true class="summary-icon"}}/{{details.total}}</span>
+  </span>
+{{/unless}}
+{{#each block.data.summary as | tag |}}
+  <span {{on "click" (optional this.scrollToIntegration)}} class="integration-summary-tag integration-background-color integration-border-color">
+    <span class="acronym integration-text-bold-color">{{block.acronym}}</span>
+    <span class="integration-text-color">{{tag}}</span>
+  </span>
+{{/each}}
+
