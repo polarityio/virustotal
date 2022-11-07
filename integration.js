@@ -179,7 +179,12 @@ function doLookup(entities, options, cb) {
               _lookupEntityType('domain', domainEntity, options, concatDone);
             },
             function (err, results) {
-              if (err) return callback(err);
+              if (err) {
+                Logger.error({ err, results }, 'Domain Search Failed');
+                return err.error.message.includes('is not a valid domain pattern')
+                  ? callback(null, [])
+                  : callback(err);
+              }
 
               callback(null, results);
             }
