@@ -181,9 +181,7 @@ function doLookup(entities, options, cb) {
             function (err, results) {
               if (err) {
                 Logger.error({ err, results }, 'Domain Search Failed');
-                return err.error.message.includes('is not a valid domain pattern')
-                  ? callback(null, [])
-                  : callback(err);
+                return callback(err);
               }
 
               callback(null, results);
@@ -724,8 +722,10 @@ function _lookupEntityType(type, entity, options, done) {
   requestWithDefaults(requestOptions, function (err, response, body) {
     _handleRequestError(err, response, body, options, function (err, result) {
       if (err) {
-        Logger.error(err, `Error Looking up ${_.startCase(type)}`);
-        return done(err);
+         Logger.error({ err, result, type: _.startCase(type) }, 'Search Failed');
+         return err.error.message.includes('is not a valid domain pattern')
+           ? done(null, [])
+           : done(err);
       }
 
       let lookupResults = _processLookupItem(
