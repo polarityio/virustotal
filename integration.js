@@ -723,7 +723,7 @@ function _lookupEntityType(type, entity, options, done) {
     _handleRequestError(err, response, body, options, function (err, result) {
       if (err) {
          Logger.error({ err, result, type: _.startCase(type) }, 'Search Failed');
-         return err.error.message.includes('is not a valid domain pattern')
+         return _.get(err, 'error.message', '').includes('is not a valid domain pattern')
            ? done(null, [])
            : done(err);
       }
