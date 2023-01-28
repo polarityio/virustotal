@@ -1,19 +1,11 @@
 {
-  "main": "./integration.js",
   "name": "VirusTotal",
-  "version": "3.6.0",
+  "version": "3.6.2",
+  "main": "./integration.js",
   "private": true,
   "dependencies": {
-    "async": "^3.2.3",
+    "async": "^3.2.4",
     "lodash": "^4.17.21",
-    "postman-request": "^2.88.1-postman.31"
-  },
-  "devDependencies": {
-    "chai": "^4.2",
-    "mocha": "^6.0",
-    "nock": "^10.0"
-  },
-  "scripts": {
-    "test": "./node_modules/.bin/mocha --recursive"
+    "postman-request": "^2.88.1-postman.32"
   }
 }
