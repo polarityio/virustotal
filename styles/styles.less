@@ -16,6 +16,50 @@ span.summary-threshold-message {
   word-wrap: break-word !important;
 }
 
+.copy-btn-container {
+  flex: 1 1 auto;
+  position: absolute;
+  right: 10px;
+  top: 7px;
+
+  .copy-btn {
+    font-size: 12px;
+    padding: 0px;
+    height: 20px;
+
+    :active {
+      color: darken(#388e3c, 5%);
+    }
+  }
+
+  .copy-success-message {
+    position: absolute;
+    top: 20px;
+    right: 0px;
+    background-color: rgb(222, 226, 230);
+    min-width: max-content;
+    padding: 5px;
+    border-radius: 3px;
+    z-index: 999;
+
+    .copy-success-icon {
+      color: #aaa;
+    }
+
+    &.visible {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.25s linear;
+    }
+
+    &.hidden {
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0s 0.25s, opacity 0.25s linear;
+    }
+  }
+}
+
 .danger-summary-tag {
   padding: 0 !important;
 
@@ -79,11 +123,11 @@ button.naked {
   background-color: transparent;
   border: none;
 
-  :hover{
+  :hover {
     color: darken(#7bc942, 10%);
   }
 
-  :active{
+  :active {
     color: darken(#7bc942, 20%);
   }
 
