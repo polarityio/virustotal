@@ -245,6 +245,7 @@ polarity.export = PolarityComponent.extend({
         activeTab: this.get('activeTab'),
         showFilesOpened: this.get('showFilesOpened'),
         showRegistryKeys: this.get('showRegistryKeys'),
+        showNames: this.get('block._state.showNames'),
         expandedWhoisMap: Object.assign({}, this.get('expandedWhoisMap'))
       };
 
@@ -253,6 +254,7 @@ polarity.export = PolarityComponent.extend({
       this.set('showHistoricalWhois', true);
       this.set('showFilesOpened', true);
       this.set('showRegistryKeys', true);
+      this.set('block._state.showNames', true);
       if (this.get('details.historicalWhoIs')) {
         this.get('details.historicalWhoIs').forEach((whois, index) => {
           this.set(`expandedWhoisMap.${index}`, true);
@@ -329,7 +331,8 @@ polarity.export = PolarityComponent.extend({
       showScanResults,
       expandedWhoisMap,
       showRegistryKeys,
-      showFilesOpened
+      showFilesOpened,
+      showNames
     } = savedSettings;
     this.set('showFilesReferring', showFilesReferring);
     this.set('showHistoricalWhois', showHistoricalWhois);
@@ -337,12 +340,12 @@ polarity.export = PolarityComponent.extend({
     this.set('activeTab', activeTab);
     this.set('showFilesOpened', showFilesOpened);
     this.set('showRegistryKeys', showRegistryKeys);
-    if(this.get('expandedWhoisMap') && expandedWhoisMap){
+    this.set('block._state.showNames', showNames);
+    if (this.get('expandedWhoisMap') && expandedWhoisMap) {
       Object.keys(this.get('expandedWhoisMap')).forEach((key) => {
         this.set(`expandedWhoisMap.${key}`, expandedWhoisMap[key] ? true : false);
       });
     }
-
 
     this.set('showCopyMessage', true);
     setTimeout(() => {
