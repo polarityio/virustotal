@@ -8,6 +8,7 @@ polarity.export = PolarityComponent.extend({
   showScanResults: false,
   showFilesReferring: false,
   showHistoricalWhois: false,
+  showCopyMessage: false,
   expandedWhoisMap: Ember.computed.alias('block.data.details.expandedWhoisMap'),
   communityScoreWidth: Ember.computed('details.reputation', function () {
     let reputation = this.get('details.reputation');
@@ -156,6 +157,9 @@ polarity.export = PolarityComponent.extend({
       this.set('block._state.showNames', true);
     }
 
+    let array = new Uint32Array(5);
+    this.set('uniqueIdPrefix', window.crypto.getRandomValues(array).join(''));
+
     this._super(...arguments);
   },
   getBehaviors: function () {
@@ -192,7 +196,7 @@ polarity.export = PolarityComponent.extend({
     this.sendIntegrationMessage(payload)
       .then((historicalWhoIs) => {
         this.set('block.data.details.historicalWhoIs', historicalWhoIs);
-        this.set('expandedWhoisMap', []);
+        this.set('expandedWhoisMap', {});
         // If there is no data we expand the whois section automatically
         // to show a "no results" message
         if (historicalWhoIs.length === 0) {
@@ -233,6 +237,39 @@ polarity.export = PolarityComponent.extend({
       });
   },
   actions: {
+    copyData: function () {
+      const savedSettings = {
+        showScanResults: this.get('showScanResults'),
+        showFilesReferring: this.get('showFilesReferring'),
+        showHistoricalWhois: this.get('showHistoricalWhois'),
+        activeTab: this.get('activeTab'),
+        showFilesOpened: this.get('showFilesOpened'),
+        showRegistryKeys: this.get('showRegistryKeys'),
+        showNames: this.get('block._state.showNames'),
+        expandedWhoisMap: Object.assign({}, this.get('expandedWhoisMap'))
+      };
+
+      this.set('showScanResults', true);
+      this.set('showFilesReferring', true);
+      this.set('showHistoricalWhois', true);
+      this.set('showFilesOpened', true);
+      this.set('showRegistryKeys', true);
+      this.set('block._state.showNames', true);
+      if (this.get('details.historicalWhoIs')) {
+        this.get('details.historicalWhoIs').forEach((whois, index) => {
+          this.set(`expandedWhoisMap.${index}`, true);
+        });
+      }
+
+      Ember.run.scheduleOnce(
+        'afterRender',
+        this,
+        this.copyElementToClipboard,
+        `virustotal-container-${this.get('uniqueIdPrefix')}`
+      );
+
+      Ember.run.scheduleOnce('destroy', this, this.restoreCopyState, savedSettings);
+    },
     /**
      * Change data tab.  valid tab names are:
      * detection
@@ -267,14 +304,54 @@ polarity.export = PolarityComponent.extend({
     },
     expandWhoIsRow: function (index) {
       this.set(`expandedWhoisMap.${index}`, !this.get(`expandedWhoisMap.${index}`));
-    },
-    copyReferringFiles: function () {
-      const content = this.get('details.referenceFiles');
-      let clipboardContent = '';
-      content.forEach((file) => {
-        clipboardContent += file.name + '\n';
-      });
-      navigator.clipboard.writeText(clipboardContent);
     }
+  },
+  copyElementToClipboard(element) {
+    window.getSelection().removeAllRanges();
+    let range = document.createRange();
+    range.selectNode(
+      typeof element === 'string' ? document.getElementById(element) : element
+    );
+    window.getSelection().addRange(range);
+    document.execCommand('copy');
+    window.getSelection().removeAllRanges();
+  },
+  getElementRange(element) {
+    let range = document.createRange();
+    range.selectNode(
+      typeof element === 'string' ? document.getElementById(element) : element
+    );
+    return range;
+  },
+  restoreCopyState(savedSettings) {
+    const {
+      activeTab,
+      showFilesReferring,
+      showHistoricalWhois,
+      showScanResults,
+      expandedWhoisMap,
+      showRegistryKeys,
+      showFilesOpened,
+      showNames
+    } = savedSettings;
+    this.set('showFilesReferring', showFilesReferring);
+    this.set('showHistoricalWhois', showHistoricalWhois);
+    this.set('showScanResults', showScanResults);
+    this.set('activeTab', activeTab);
+    this.set('showFilesOpened', showFilesOpened);
+    this.set('showRegistryKeys', showRegistryKeys);
+    this.set('block._state.showNames', showNames);
+    if (this.get('expandedWhoisMap') && expandedWhoisMap) {
+      Object.keys(this.get('expandedWhoisMap')).forEach((key) => {
+        this.set(`expandedWhoisMap.${key}`, expandedWhoisMap[key] ? true : false);
+      });
+    }
+
+    this.set('showCopyMessage', true);
+    setTimeout(() => {
+      if (!this.isDestroyed) {
+        this.set('showCopyMessage', false);
+      }
+    }, 2000);
   }
 });
