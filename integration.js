@@ -386,8 +386,11 @@ function _handleRequestError(err, response, body, options, cb) {
 
     if (options.warnOnLookupLimit) {
       cb('API Lookup Limit Reached');
+    } else if (options.warnOnThrottle) {
+      throttleCache.set(options.apiKey, true);
+      cb(`Throttling lookups for ${options.lookupThrottleDuration} minute`, []);
     } else {
-      cb(null, []);
+      cb(null, { __keyLimitReached: true });
     }
 
     return;
@@ -508,6 +511,13 @@ const _processLookupItem = (
   showEntitiesWithNoDetections,
   showNoInfoTag
 ) => {
+  if(result && result.__keyLimitReached){
+    return {
+      entity,
+      data: null
+    }
+  }
+
   const data = fp.get('data', result);
   const attributes = fp.get('attributes', data);
   const lastAnalysisStats = fp.get('last_analysis_stats', attributes);
@@ -519,7 +529,7 @@ const _processLookupItem = (
   const totalMalicious = fp.get('malicious', lastAnalysisStats);
 
   // Check for no data
-  // If there is no data, then VT does not know anything about the entity in question
+  // If there is no data, then VT does not know anything about the entity in question)
   if (!result || !data || !totalResults) {
     // if `showNoInfoTag` is true, then the user wants to see a result everytime
     // indicating that there is no information in VT
@@ -722,10 +732,10 @@ function _lookupEntityType(type, entity, options, done) {
   requestWithDefaults(requestOptions, function (err, response, body) {
     _handleRequestError(err, response, body, options, function (err, result) {
       if (err) {
-         Logger.error({ err, result, type: _.startCase(type) }, 'Search Failed');
-         return _.get(err, 'error.message', '').includes('is not a valid domain pattern')
-           ? done(null, [])
-           : done(err);
+        Logger.error({ err, result, type: _.startCase(type) }, 'Search Failed');
+        return _.get(err, 'error.message', '').includes('is not a valid domain pattern')
+          ? done(null, [])
+          : done(err);
       }
 
       let lookupResults = _processLookupItem(
