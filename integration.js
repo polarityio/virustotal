@@ -59,7 +59,7 @@ const TYPES_BY_SHOW_NO_DETECTIONS = {
  * @param options
  * @param cb
  */
-function doLookup(entities, options, cb) {
+function doLookup (entities, options, cb) {
   // if the threshold rules are disabled then we want an empty rule set (empty array)
   if (options.baselineInvestigationThresholdEnabled === false) {
     compiledThresholdRules = [];
@@ -265,7 +265,7 @@ function doLookup(entities, options, cb) {
   );
 }
 
-function _isEntityBlocked(entity, options) {
+function _isEntityBlocked (entity, options) {
   const blocklist = options.blocklist;
   const currentIpBlocklistRegex = options.ipBlocklistRegex;
   const currentDomainUrlBlocklistRegex = options.domainUrlBlocklistRegex;
@@ -348,13 +348,13 @@ function _isEntityBlocked(entity, options) {
   return false;
 }
 
-function _removeFromThrottleCache(apiKey) {
+function _removeFromThrottleCache (apiKey) {
   return function () {
     throttleCache.delete(apiKey);
   };
 }
 
-function _handleRequestError(err, response, body, options, cb) {
+function _handleRequestError (err, response, body, options, cb) {
   if (err) {
     cb(
       _createJsonErrorPayload(
@@ -425,7 +425,7 @@ function _handleRequestError(err, response, body, options, cb) {
   cb(null, body);
 }
 
-function _lookupHash(hashesArray, entityLookup, options, done) {
+function _lookupHash (hashesArray, entityLookup, options, done) {
   if (doLookupLogging) {
     debugLookupStats.hashLookups++;
   }
@@ -466,7 +466,7 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
   );
 }
 
-function _lookupUrl(entity, options, done) {
+function _lookupUrl (entity, options, done) {
   if (doLookupLogging) debugLookupStats.urlLookups++;
 
   const urlAsBase64WithoutPadding = Buffer.from(entity.value)
@@ -708,7 +708,7 @@ const getDetailFields = (detailFields, attributes) =>
     };
   }, detailFields);
 
-function _lookupEntityType(type, entity, options, done) {
+function _lookupEntityType (type, entity, options, done) {
   if (doLookupLogging) debugLookupStats[`${type}Lookups`]++;
 
   let requestOptions = {
@@ -722,10 +722,10 @@ function _lookupEntityType(type, entity, options, done) {
   requestWithDefaults(requestOptions, function (err, response, body) {
     _handleRequestError(err, response, body, options, function (err, result) {
       if (err) {
-         Logger.error({ err, result, type: _.startCase(type) }, 'Search Failed');
-         return _.get(err, 'error.message', '').includes('is not a valid domain pattern')
-           ? done(null, [])
-           : done(err);
+        Logger.error({ err, result, type: _.startCase(type) }, 'Search Failed');
+        return _.get(err, 'error.message', '').includes('is not a valid domain pattern')
+          ? done(null, [])
+          : done(err);
       }
 
       let lookupResults = _processLookupItem(
@@ -743,7 +743,7 @@ function _lookupEntityType(type, entity, options, done) {
   });
 }
 
-function parseBaselineInvestigationThreshold(bti) {
+function parseBaselineInvestigationThreshold (bti) {
   const rules = bti.split(',');
   const compiledRules = [];
   rules.forEach((rule) => {
@@ -787,7 +787,7 @@ function parseBaselineInvestigationThreshold(bti) {
  * @param range
  * @returns {{min: number, max: number}}
  */
-function splitBtiRange(rule, range) {
+function splitBtiRange (rule, range) {
   let ranges = range.split('-');
   if (ranges.length !== 1 && ranges.length !== 2) {
     throw `Invalid range [${range}] on rule [${rule}].  Range must be a single number or a range of the format <number>-<number>`;
@@ -827,13 +827,13 @@ function splitBtiRange(rule, range) {
  * @returns {{errors: *[]}}
  * @private
  */
-function _createJsonErrorPayload(msg, pointer, httpCode, code, title, meta) {
+function _createJsonErrorPayload (msg, pointer, httpCode, code, title, meta) {
   return {
     errors: [_createJsonErrorObject(msg, pointer, httpCode, code, title, meta)]
   };
 }
 
-function _createJsonErrorObject(msg, pointer, httpCode, code, title, meta) {
+function _createJsonErrorObject (msg, pointer, httpCode, code, title, meta) {
   let error = {
     detail: msg,
     status: httpCode.toString(),
@@ -854,7 +854,7 @@ function _createJsonErrorObject(msg, pointer, httpCode, code, title, meta) {
   return error;
 }
 
-async function getWhois(entity, options) {
+async function getWhois (entity, options) {
   return new Promise((resolve, reject) => {
     if (entity.isIP || entity.isDomain) {
       const type = entity.isIP ? 'ip' : 'domain';
@@ -913,7 +913,7 @@ async function getWhois(entity, options) {
  * @param entity
  * @param options
  */
-async function getRelations(entity, options) {
+async function getRelations (entity, options) {
   return new Promise((resolve, reject) => {
     if (entity.isIP || entity.isDomain) {
       const type = entity.isIP ? 'ip' : 'domain';
@@ -991,7 +991,7 @@ async function getRelations(entity, options) {
   });
 }
 
-function getBehaviors(entity, options) {
+function getBehaviors (entity, options) {
   return new Promise((resolve, reject) => {
     if (entity.isMD5 || entity.isSHA1 || entity.isSHA256) {
       let behaviourSummaryOptions = {
@@ -1016,7 +1016,7 @@ function getBehaviors(entity, options) {
   });
 }
 
-function startup(logger) {
+function startup (logger) {
   Logger = logger;
 
   if (config && config.logging && config.logging.logLookupStats) {
@@ -1068,7 +1068,7 @@ function startup(logger) {
   requestWithDefaults = request.defaults(defaults);
 }
 
-function _logLookupStats() {
+function _logLookupStats () {
   debugLookupStats.ipCount = lookupIpSet.size;
   debugLookupStats.domainCount = lookupDomainSet.size;
   debugLookupStats.urlCount = lookupUrlSet.size;
@@ -1096,7 +1096,7 @@ function _logLookupStats() {
   }
 }
 
-function errorToPojo(err) {
+function errorToPojo (err) {
   if (err instanceof Error) {
     return {
       // Pull all enumerable properties, supporting properties on custom Errors
@@ -1111,7 +1111,7 @@ function errorToPojo(err) {
   return err;
 }
 
-async function onMessage(payload, options, cb) {
+async function onMessage (payload, options, cb) {
   const { entity, action } = payload;
   switch (action) {
     case 'GET_RELATIONS':
@@ -1144,7 +1144,7 @@ async function onMessage(payload, options, cb) {
   }
 }
 
-function validateOptions(userOptions, cb) {
+function validateOptions (userOptions, cb) {
   let errors = [];
   if (
     typeof userOptions.apiKey.value !== 'string' ||
