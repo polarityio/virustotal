@@ -307,7 +307,7 @@ polarity.export = PolarityComponent.extend({
       this.set(`expandedWhoisMap.${index}`, !this.get(`expandedWhoisMap.${index}`));
     }
   },
-  copyElementToClipboard(element) {
+  copyElementToClipboard (element) {
     window.getSelection().removeAllRanges();
     let range = document.createRange();
     range.selectNode(
@@ -317,14 +317,14 @@ polarity.export = PolarityComponent.extend({
     document.execCommand('copy');
     window.getSelection().removeAllRanges();
   },
-  getElementRange(element) {
+  getElementRange (element) {
     let range = document.createRange();
     range.selectNode(
       typeof element === 'string' ? document.getElementById(element) : element
     );
     return range;
   },
-  restoreCopyState(savedSettings) {
+  restoreCopyState (savedSettings) {
     const {
       activeTab,
       showFilesReferring,
