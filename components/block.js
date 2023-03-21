@@ -8,7 +8,7 @@ polarity.export = PolarityComponent.extend({
   showScanResults: false,
   showFilesReferring: false,
   showHistoricalWhois: false,
-  showCopyMessage: false,
+  behaviorSummary: null,
   expandedWhoisMap: Ember.computed.alias('block.data.details.expandedWhoisMap'),
   communityScoreWidth: Ember.computed('details.reputation', function () {
     let reputation = this.get('details.reputation');
@@ -123,18 +123,18 @@ polarity.export = PolarityComponent.extend({
   elementCircumference: Ember.computed('elementRadius', function () {
     return 2 * Math.PI * this.get('elementRadius');
   }),
-  _getStrokeOffset(ticScore, circumference) {
+  _getStrokeOffset (ticScore, circumference) {
     let progress = ticScore / this.details.total;
     return circumference * (1 - progress);
   },
-  _getThreatColor(ticScore) {
+  _getThreatColor (ticScore) {
     if (ticScore > 0) {
       return this.get('redThreat');
     } else {
       return this.get('greenThreat');
     }
   },
-  init() {
+  init () {
     this.set(
       'showScanResults',
       this.get('block.userOptions.showNoDetections') === false
@@ -171,6 +171,7 @@ polarity.export = PolarityComponent.extend({
     this.set('block._state.loadingBehaviors', true);
     this.sendIntegrationMessage(payload)
       .then((behaviorSummary) => {
+        console.log('AAAAAAAAA', behaviorSummary);
         this.set('block.data.details.behaviorSummary', behaviorSummary);
         this.set(
           'showRegistryKeys',

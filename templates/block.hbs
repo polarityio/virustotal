@@ -22,45 +22,45 @@
 
 {{#if details.noInfoMessage}}
   <div>
-    <span class='p-key'><em>No Information in VirusTotal</em></span>
+    <span class="p-key"><em>No Information in VirusTotal</em></span>
   </div>
 {{else}}
-  <div class='top-section'>
-    <div class='indicator'>
-      <div class='tic-gauge-container'>
-        <svg x='0' y='0' width='100%' height='100%' viewBox='0 0 55 50'>
-          <g transform='translate(28,25)'>
+  <div class="top-section">
+    <div class="indicator">
+      <div class="tic-gauge-container">
+        <svg x="0" y="0" width="100%" height="100%" viewBox="0 0 55 50">
+          <g transform="translate(28,25)">
             <g>
               <circle
-                r='{{elementRadius}}'
-                stroke='#eee'
-                transform='rotate(-90)'
-                fill='#fff'
-                stroke-width='{{elementStrokeWidth}}'
-                cx='0'
-                cy='0'
+                r="{{elementRadius}}"
+                stroke="#eee"
+                transform="rotate(-90)"
+                fill="#fff"
+                stroke-width="{{elementStrokeWidth}}"
+                cx="0"
+                cy="0"
               ></circle>
               <circle
-                stroke-dasharray='{{elementCircumference}}'
-                r='{{elementRadius}}'
-                stroke='{{elementColor}}'
-                transform='rotate(-90)'
-                fill='none'
-                stroke-dashoffset='{{elementStrokeOffset}}'
-                stroke-width='{{elementStrokeWidth}}'
-                cx='0'
-                cy='0'
+                stroke-dasharray="{{elementCircumference}}"
+                r="{{elementRadius}}"
+                stroke="{{elementColor}}"
+                transform="rotate(-90)"
+                fill="none"
+                stroke-dashoffset="{{elementStrokeOffset}}"
+                stroke-width="{{elementStrokeWidth}}"
+                cx="0"
+                cy="0"
               ></circle>
               <text
-                text-anchor='middle'
-                x='0'
-                y='0'
-                fill='{{elementColor}}'
-                font-size='13'
+                text-anchor="middle"
+                x="0"
+                y="0"
+                fill="{{elementColor}}"
+                font-size="13"
               >
                 {{details.positives}}
               </text>
-              <text text-anchor='middle' x='-1' y='10' fill='gray' font-size='7'>
+              <text text-anchor="middle" x="-1" y="10" fill="gray" font-size="7">
                 /
                 {{details.total}}
               </text>
@@ -76,20 +76,21 @@
             size="2x"
             icon=communityScoreIcon
             fixedWidth=true
-            class=communityScoreColorClass}}
+            class=communityScoreColorClass
+          }}
         </div>
         <div class="score-line"></div>
         <div class="p-footnote score-footer">Community Score ({{details.reputation}})</div>
       </div>
       {{#if details.tags.length}}
-        <div class='tags-container'>
-          <h1 class='p-title'>
-            {{fa-icon 'tags' fixedWidth=true}}
+        <div class="tags-container">
+          <h1 class="p-title">
+            {{fa-icon "tags" fixedWidth=true}}
             Tags
           </h1>
-          <div class='tags'>
+          <div class="tags">
             {{#each details.tags as |tag|}}
-              <div class='tag'>
+              <div class="tag">
                 {{tag}}
               </div>
             {{/each}}
@@ -99,44 +100,44 @@
     </div>
   </div>
 
-  <ul class='nav nav-tabs mt-2'>
-    <li class='nav-item'>
+  <ul class="nav nav-tabs mt-2">
+    <li class="nav-item">
       <a
-        {{action 'changeTab' 'detection'}}
-        class='nav-link {{if (or (eq activeTab "detection") (not activeTab)) "active"}}'
-        href='#'
+        {{action "changeTab" "detection"}}
+        class="nav-link {{if (or (eq activeTab 'detection') (not activeTab)) 'active'}}"
+        href="#"
       >
         Detection
       </a>
     </li>
     {{#if details.detailsTab.length}}
-      <li class='nav-item'>
+      <li class="nav-item">
         <a
-          {{action 'changeTab' 'details'}}
-          class='nav-link {{if (or (eq activeTab "details") (not activeTab)) "active"}}'
-          href='#'
+          {{action "changeTab" "details"}}
+          class="nav-link {{if (or (eq activeTab 'details') (not activeTab)) 'active'}}"
+          href="#"
         >
           Details
         </a>
       </li>
     {{/if}}
     {{#if (or block.entity.isIP block.entity.isDomain)}}
-      <li class='nav-item'>
+      <li class="nav-item">
         <a
-          {{action 'changeTab' 'relations'}}
-          class='nav-link {{if (eq activeTab "relations") "active"}}'
-          href='#'
+          {{action "changeTab" "relations"}}
+          class="nav-link {{if (eq activeTab 'relations') 'active'}}"
+          href="#"
         >
           Relations
         </a>
       </li>
     {{/if}}
     {{#if (or block.entity.isMD5 block.entity.isSHA1 block.entity.isSHA256)}}
-      <li class='nav-item'>
+      <li class="nav-item">
         <a
-          {{action 'changeTab' 'behaviorSummary'}}
-          class='nav-link {{if (eq activeTab "behaviorSummary") "active"}}'
-          href='#'
+          {{action "changeTab" "behaviorSummary"}}
+          class="nav-link {{if (eq activeTab 'behaviorSummary') 'active'}}"
+          href="#"
         >
           Behavior Summary
         </a>
@@ -146,71 +147,89 @@
   <div id="{{concat "virustotal-container-" uniqueIdPrefix}}" class="export-node">
     {{#if (eq activeTab 'detection')}}
 
-        <div class='p-link mt-2'>
-          <a href='{{details.detectionsLink}}'>View detections in VirusTotal
-            {{fa-icon 'external-link-square' class='external-link-icon'}}</a>
-        </div>
-        <h1 class="p-title">{{fa-icon "clipboard" fixedWidth=true}} Summary</h1>
-        <div>
-          <strong>{{details.positiveScans.length}}</strong> security vendor{{#if (not-eq details.positiveScans.length 1)}}s{{/if}} flagged this indicator as malicious.  The indicator has a
-          community score of <strong>{{details.reputation}}</strong> and was last scanned <strong>{{moment-from-now details.scan_date timeZone=timezone}}</strong>
-          on {{moment-format details.scan_date 'YYYY-MM-DD HH:mm:ss z' timeZone=timezone}}.
-          A negative community score indicates maliciousness, whereas a positive score reflects harmlessness where the higher the absolute number the more you may trust the score (-100 to 100).
-        </div>
-        {{! detections }}
-        <div class='toggle-header'>
-          <span class='p-action' {{action 'toggleShowResults' 'showScanResults'}}>
-            {{fa-icon 'laptop' fixedWidth=true}}
-            {{#unless block.userOptions.showNoDetections}}Positive {{/unless}}
-            Detections ({{details.positives}}
-            of
-            {{details.total}})
-            {{fa-icon (if showScanResults 'caret-up' 'caret-down') fixedWidth=true}}
-          </span>
-        </div>
-        {{#if showScanResults}}
-          <div class='scan-results'>
-            {{#unless details.positiveScans}}
-              <span>No security vendor flagged this indicator as malicious</span>
-            {{/unless}}
-            <table>
-              <tbody>
-                {{#each details.positiveScans as |positiveScan|}}
-                  <tr>
-                    <td>
-                      <span class='p-key'>{{positiveScan.name}} </span>
-                    </td>
-                    <td>
-                      <span class='p-value' style='color: #FF3A59'>
-                        {{fa-icon 'exclamation' class='p-red table-icon' fixedWidth=true}}
-                        {{positiveScan.result}}
-                      </span>
-                    </td>
-                  </tr>
-                {{/each}}
-                {{#if block.userOptions.showNoDetections}}
-                  {{#each details.negativeScans as |negativeScan|}}
-                    <tr>
-                      <td>
-                        <span class='p-key'>{{negativeScan.name}} </span>
-                      </td>
-                      <td>
-                        <span class='p-value'>
-                          {{#if (eq negativeScan.result 'Unrated')}}
-                            {{fa-icon 'question' class='p-grey table-icon' fixedWidth=true}}
+  {{#if (eq activeTab "detection")}}
+    <div class="p-link mt-2">
+      <a href="{{details.detectionsLink}}">View detections in VirusTotal
+        {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+    </div>
+    <h1 class="p-title">{{fa-icon "clipboard" fixedWidth=true}} Summary</h1>
+    <div>
+      <strong>{{details.positiveScans.length}}</strong>
+      security vendor{{#if (not-eq details.positiveScans.length 1)}}s{{/if}}
+      flagged this indicator as malicious. The indicator has a community score of
+      <strong>{{details.reputation}}</strong>
+      and was last scanned
+      <strong>{{moment-from-now details.scan_date timeZone=timezone}}</strong>
+      on
+      {{moment-format details.scan_date "YYYY-MM-DD HH:mm:ss z" timeZone=timezone}}. A
+      negative community score indicates maliciousness, whereas a positive score reflects
+      harmlessness where the higher the absolute number the more you may trust the score
+      (-100 to 100).
+    </div>
+    {{! detections }}
+    <div class="toggle-header">
+      <span class="p-action" {{action "toggleShowResults" "showScanResults"}}>
+        {{fa-icon "laptop" fixedWidth=true}}
+        {{#unless block.userOptions.showNoDetections}}Positive {{/unless}}
+        Detections ({{details.positives}}
+        of
+        {{details.total}})
+        {{fa-icon (if showScanResults "caret-up" "caret-down") fixedWidth=true}}
+      </span>
+    </div>
+    {{#if showScanResults}}
+      <div class="scan-results">
+        {{#unless details.positiveScans}}
+          <span>No security vendor flagged this indicator as malicious</span>
+        {{/unless}}
+        <table>
+          <tbody>
+            {{#each details.positiveScans as |positiveScan|}}
+              <tr>
+                <td>
+                  <span class="p-key">{{positiveScan.name}} </span>
+                </td>
+                <td>
+                  <span class="p-value" style="color: #FF3A59">
+                    {{fa-icon "exclamation" class="p-red table-icon" fixedWidth=true}}
+                    {{positiveScan.result}}
+                  </span>
+                </td>
+              </tr>
+            {{/each}}
+            {{#if block.userOptions.showNoDetections}}
+              {{#each details.negativeScans as |negativeScan|}}
+                <tr>
+                  <td>
+                    <span class="p-key">{{negativeScan.name}} </span>
+                  </td>
+                  <td>
+                    <span class="p-value">
+                      {{#if (eq negativeScan.result "Unrated")}}
+                        {{fa-icon "question" class="p-grey table-icon" fixedWidth=true}}
+                      {{else}}
+                        {{#if (eq negativeScan.result "type-unsupported")}}
+                          {{fa-icon
+                            "eye-slash"
+                            class="p-grey table-icon"
+                            fixedWidth=true
+                          }}
+                        {{else}}
+                          {{#if (eq negativeScan.result "Suspicious")}}
+                            {{fa-icon "info" class="p-orange table-icon" fixedWidth=true}}
                           {{else}}
-                            {{#if (eq negativeScan.result 'type-unsupported')}}
-                              {{fa-icon 'eye-slash' class='p-grey table-icon' fixedWidth=true}}
-                            {{else}}
-                              {{#if (eq negativeScan.result 'Suspicious')}}
-                                {{fa-icon 'info' class='p-orange table-icon' fixedWidth=true}}
-                              {{else}}
-                                {{fa-icon 'check' class='p-green table-icon' fixedWidth=true}}
-                              {{/if}}
-                            {{/if}}
+                            {{fa-icon "check" class="p-green table-icon" fixedWidth=true}}
                           {{/if}}
-                          {{#if (eq negativeScan.result 'type-unsupported')}}
-                            <span class='p-grey'>Unable to process file type</span>
+                        {{/if}}
+                      {{/if}}
+                      {{#if (eq negativeScan.result "type-unsupported")}}
+                        <span class="p-grey">Unable to process file type</span>
+                      {{else}}
+                        {{#if (eq negativeScan.result "Suspicious")}}
+                          <span class="p-orange">Suspicious</span>
+                        {{else}}
+                          {{#if (not negativeScan.result)}}
+                            Undetected
                           {{else}}
                             {{#if (eq negativeScan.result 'Suspicious')}}
                               <span class='p-orange'>Suspicious</span>
@@ -234,104 +253,66 @@
     {{/if}}
     {{! end of detections}}
 
-    {{#if (eq activeTab 'details')}}
-      <div class='p-link mt-2'>
-        <a href='{{details.detailsLink}}'>View Details in VirusTotal
-          {{fa-icon 'external-link-square' class='external-link-icon'}}</a>
-      </div>
-      <div class='p-link mt-2'>
-        <a href='{{details.communityLink}}'>View Comments in VirusTotal
-          {{fa-icon 'external-link-square' class='external-link-icon'}}</a>
-      </div>
-      {{#if details.detailsTab.length}}
-        {{#each details.detailsTab as |detailsField|}}
-          {{#if detailsField.isObject}}
-            <h1 class='p-title'>{{fa-icon icon='th-list' fixedWidth=true}}
-              {{detailsField.key}}</h1>
-            {{#each-in detailsField.value as |key value|}}
-              {{#if value}}
-                <div>
-                  <span class='p-key'>{{key}}:</span>
-                  <span class='p-value'>{{value}}</span>
-                </div>
-              {{/if}}
-            {{/each-in}}
-          {{else if detailsField.isList}}
-              {{#each detailsField.value as |value|}}
-                {{#if value}}
-                  <div>
-                    <span class='p-key'>{{detailsField.key}}:</span>
-                    <span class='p-value'>{{value}}</span>
-                  </div>
-                {{/if}}
-              {{/each}}
-          {{else if detailsField.isTitle}}
-              <h1 class='p-title'>{{fa-icon icon='th-list' fixedWidth=true}}
-                {{detailsField.key}}</h1>
-          {{else if detailsField.isDate}}
+  {{#if (eq activeTab "details")}}
+    <div class="p-link mt-2">
+      <a href="{{details.detailsLink}}">View Details in VirusTotal
+        {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+    </div>
+    <div class="p-link mt-2">
+      <a href="{{details.communityLink}}">View Comments in VirusTotal
+        {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+    </div>
+    {{#if details.detailsTab.length}}
+      {{#each details.detailsTab as |detailsField|}}
+        {{#if detailsField.isObject}}
+          <h1 class="p-title">{{fa-icon icon="th-list" fixedWidth=true}}
+            {{detailsField.key}}</h1>
+          {{#each-in detailsField.value as |key value|}}
+            {{#if value}}
+              <div>
+                <span class="p-key">{{key}}:</span>
+                <span class="p-value">{{value}}</span>
+              </div>
+            {{/if}}
+          {{/each-in}}
+        {{else if detailsField.isList}}
+          {{#each detailsField.value as |value|}}
+            {{#if value}}
+              <div>
+                <span class="p-key">{{detailsField.key}}:</span>
+                <span class="p-value">{{value}}</span>
+              </div>
+            {{/if}}
+          {{/each}}
+        {{else if detailsField.isTitle}}
+          <h1 class="p-title">{{fa-icon icon="th-list" fixedWidth=true}}
+            {{detailsField.key}}</h1>
+        {{else if detailsField.isDate}}
+          <div>
+            <span class="p-key">{{detailsField.key}}:</span>
+            <span class="p-value">{{moment-format
+                (unix detailsField.value)
+                "YYYY-MM-DD HH:mm:ss z"
+                timeZone=timezone
+              }}</span>
+          </div>
+        {{else}}
+          {{#if detailsField.value}}
             <div>
-              <span class='p-key'>{{detailsField.key}}:</span>
-              <span class='p-value'>{{moment-format (unix detailsField.value) "YYYY-MM-DD HH:mm:ss z" timeZone=timezone}}</span>
+              <span class="p-key">{{detailsField.key}}:</span>
+              <span class="p-value">{{detailsField.value}}</span>
             </div>
-          {{else}}
-              {{#if detailsField.value}}
-                <div>
-                  <span class='p-key'>{{detailsField.key}}:</span>
-                  <span class='p-value'>{{detailsField.value}}</span>
-                </div>
-              {{/if}}
-          {{/if}}
-        {{/each}}
-      {{/if}}
-
-      {{#if (or block.entity.isMD5 block.entity.isSHA1 block.entity.isSHA256)}}
-        <div class='toggle-header'>
-          <span class='p-action' {{action 'toggleShowResults' 'block._state.showNames'}}>
-            {{fa-icon icon="file" fixedWidth=true}}
-            Names ({{details.names.length}})
-            {{fa-icon (if showFilesReferring 'caret-up' 'caret-down') fixedWidth=true}}
-          </span>
-        </div>
-        {{#if block._state.showNames}}
-          {{#if (gt details.names.length 0)}}
-            <div class="scrollable-block">
-              <table>
-                <tbody>
-                  {{#each details.names as |name index|}}
-                    <tr><td>{{name}}</td></tr>
-                  {{/each}}
-                </tbody>
-              </table>
-            </div>
-          {{else}}
-            <span>No Filenames found</span>
           {{/if}}
         {{/if}}
       {{/if}}
     {{/if}}
 
-    {{! start of behavior summary}}
-    {{#if (eq activeTab 'behaviorSummary')}}
-      <div class='p-link mt-2'>
-        <a href='{{details.behaviorLink}}'>View behaviors in VirusTotal
-          {{fa-icon 'external-link-square' class='external-link-icon'}}</a>
-      </div>
-
-      {{#if block._state.errorBehaviors}}
-        <div class="alert alert-danger mt-2">
-          <pre>{{block._state.errorBehaviors}}</pre>
-        </div>`
-      {{/if}}
-
-      <div class='toggle-header'>
-        <span class='p-action' {{action 'toggleShowResults' 'showRegistryKeys'}}>
-          {{fa-icon 'key' fixedWidth=true}}
-          {{#if block._state.loadingBehaviors}}
-            {{fa-icon icon="spinner-third" spin=true fixedWidth=true}} Loading registry keys ...
-          {{else}}
-            Registry Keys ({{if details.behaviorSummary.registry_keys_opened details.behaviorSummary.registry_keys_opened.length "0"}})
-          {{/if}}
-          {{fa-icon (if showRegistryKeys 'caret-up' 'caret-down') fixedWidth=true}}
+    {{#if (or block.entity.isMD5 block.entity.isSHA1 block.entity.isSHA256)}}
+      <div class="toggle-header">
+        <span class="p-action" {{action "toggleShowResults" "block._state.showNames"}}>
+          {{fa-icon icon="file" fixedWidth=true}}
+          Names ({{details.names.length}})
+          {{fa-icon (if showFilesReferring "caret-up" "caret-down") fixedWidth=true}}
         </span>
       </div>
 
@@ -350,18 +331,39 @@
           <span>No registry key information available</span>
         {{/if}}
       {{/if}}
+    {{/if}}
+  {{/if}}
 
-      <div class="toggle-header">
-        <span class='p-action' {{action 'toggleShowResults' 'showFilesOpened'}}>
-          {{fa-icon 'file' fixedWidth=true}}
-          {{#if block._state.loadingBehaviors}}
-            {{fa-icon icon="spinner-third" spin=true fixedWidth=true}} Loading opened files ...
-          {{else}}
-            Opened Files ({{if details.behaviorSummary.files_opened details.behaviorSummary.files_opened.length "0"}})
-          {{/if}}
-          {{fa-icon (if showFilesOpened 'caret-up' 'caret-down') fixedWidth=true}}
-        </span>
-      </div>
+  {{! start of behavior summary}}
+  {{#if (eq activeTab "behaviorSummary")}}
+
+    <div class="p-link mt-2">
+      <a href="{{details.behaviorLink}}">View behaviors in VirusTotal
+        {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+    </div>
+
+    {{#if block._state.errorBehaviors}}
+      <div class="alert alert-danger mt-2">
+        <pre>{{block._state.errorBehaviors}}</pre>
+      </div>`
+    {{/if}}
+
+    <div class="toggle-header">
+      <span class="p-action" {{action "toggleShowResults" "showRegistryKeys"}}>
+        {{fa-icon "key" fixedWidth=true}}
+        {{#if block._state.loadingBehaviors}}
+          {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+          Loading registry keys ...
+        {{else}}
+          Registry Keys ({{if
+            details.behaviorSummary.registry_keys_opened
+            details.behaviorSummary.registry_keys_opened.length
+            "0"
+          }})
+        {{/if}}
+        {{fa-icon (if showRegistryKeys "caret-up" "caret-down") fixedWidth=true}}
+      </span>
+    </div>
 
       {{#if showFilesOpened}}
         {{#if details.behaviorSummary.files_opened}}
@@ -371,121 +373,169 @@
               {{#each details.behaviorSummary.files_opened as |file|}}
                 <tr><td>{{file}}</td></tr>
               {{/each}}
-              </tbody>
-            </table>
-          </div>
-        {{else}}
-          <span>No opened files information available</span>
-        {{/if}}
+            </tbody>
+          </table>
+        </div>
+      {{else}}
+        <span>No registry key information available</span>
       {{/if}}
+    {{/if}}
 
+    <div class="toggle-header">
+      <span class="p-action" {{action "toggleShowResults" "showFilesOpened"}}>
+        {{fa-icon "file" fixedWidth=true}}
+        {{#if block._state.loadingBehaviors}}
+          {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+          Loading opened files ...
+        {{else}}
+          Opened Files ({{if
+            details.behaviorSummary.files_opened
+            details.behaviorSummary.files_opened.length
+            "0"
+          }})
+        {{/if}}
+        {{fa-icon (if showFilesOpened "caret-up" "caret-down") fixedWidth=true}}
+      </span>
+    </div>
+
+    {{#if showFilesOpened}}
+      {{#if details.behaviorSummary.files_opened}}
+        <div class="scrollable-block">
+          <table>
+            <tbody>
+              {{#each details.behaviorSummary.files_opened as |file|}}
+                <tr><td>{{file}}</td></tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
+      {{else}}
+        <span>No opened files information available</span>
+      {{/if}}
+    {{/if}}
+  {{/if}}
+  {{! end of behavior summary}}
+
+  {{! START RELATIONS TAB }}
+  {{#if (eq activeTab "relations")}}
+    <div class="p-link mt-2">
+      <a href="{{details.relationsLink}}">View relations in VirusTotal
+        {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+    </div>
+
+    {{#if block._state.errorWhois}}
+      <div class="alert alert-danger mt-2">
+        <pre>{{block._state.errorWhois}}</pre>
+      </div>`
     {{/if}}
     {{! end of behavior summary}}
 
 
-    {{! START RELATIONS TAB }}
-    {{#if (eq activeTab 'relations')}}
-      <div class='p-link mt-2'>
-        <a href='{{details.relationsLink}}'>View relations in VirusTotal
-          {{fa-icon 'external-link-square' class='external-link-icon'}}</a>
-      </div>
-
-      {{#if block._state.errorWhois}}
-        <div class="alert alert-danger mt-2">
-          <pre>{{block._state.errorWhois}}</pre>
-        </div>`
-      {{/if}}
-
-      {{#if block._state.errorRelations}}
-        <div class="alert alert-danger mt-2">
-          <pre>{{block._state.errorRelations}}</pre>
-        </div>`
-      {{/if}}
-
-      <div class='toggle-header'>
-        <span class='p-action' {{action 'toggleShowResults' 'showFilesReferring'}}>
-          {{fa-icon 'project-diagram' fixedWidth=true}}
-          {{#if block._state.loadingRelations}}
-            {{fa-icon icon="spinner-third" spin=true fixedWidth=true}} Loading files referring ...
-          {{else}}
-            Files Referring ({{details.referenceFiles.length}})
-          {{/if}}
-          {{fa-icon (if showFilesReferring 'caret-up' 'caret-down') fixedWidth=true}}
-        </span>
-      </div>
-
-      {{#if showFilesReferring}}
-        {{#if (eq details.referenceFiles.length 0)}}
-          <span>No files referring available</span>
+    <div class="toggle-header">
+      <span class="p-action" {{action "toggleShowResults" "showFilesReferring"}}>
+        {{fa-icon "project-diagram" fixedWidth=true}}
+        {{#if block._state.loadingRelations}}
+          {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+          Loading files referring ...
         {{else}}
-          <div class="scrollable-block">
-            <table>
-              <tbody>
-              {{#each details.referenceFiles as |referrenceFile|}}
-              <tr>
-                <td class="pr-3">
-                  {{#if referrenceFile.name}}
-                    <div>
-                      <span class='p-key'>Name:</span>
-                      <span class='p-value'>
-                        {{#if referrenceFile.link}}
-                          <a href={{referrenceFile.link}}>{{referrenceFile.name}} {{fa-icon 'external-link-square' class='external-link-icon'}}</a>
-                        {{else}}
-                          {{referrenceFile.name}}
-                        {{/if}}
-                      </span>
-                    </div>
-                  {{/if}}
-                  {{#if referrenceFile.type}}
-                    <div>
-                      <span class='p-key'>Type:</span>
-                      <span class='p-value'>{{referrenceFile.type}}</span>
-                    </div>
-                  {{/if}}
-                  {{#if referrenceFile.detections}}
-                    <div>
-                      <span class='p-key'>Detections:</span>
-                      <span class='p-value'>{{referrenceFile.detections}}</span>
-                    </div>
-                  {{/if}}
-                  {{#if referrenceFile.scannedDate}}
-                    <div>
-                      <span class='p-key'>Scanned:</span>
-                      <span class='p-value'>
-                        {{#if (eq referrenceFile.scannedDate '-')}}
-                          -
-                        {{else}}
-                          {{moment-format referrenceFile.scannedDate 'YYYY-MM-DD HH:mm:ss UTC'}}
-                        {{/if}}
-                      </span>
-                    </div>
-                  {{/if}}
-                </td>
-              </tr>
-            {{/each}}
-              </tbody>
-            </table>
-          </div>
+          Files Referring ({{details.referenceFiles.length}})
         {{/if}}
+        {{fa-icon (if showFilesReferring "caret-up" "caret-down") fixedWidth=true}}
+      </span>
+    </div>
+
+    {{#if showFilesReferring}}
+      {{#if (eq details.referenceFiles.length 0)}}
+        <span>No files referring available</span>
+      {{else}}
+        <button
+          type="button"
+          title="Copy referring file names"
+          class="btn-sm naked file-copy-button"
+          {{action "copyReferringFiles"}}
+        >
+          {{fa-icon
+            icon="copy"
+            fixedWidth=true
+            class="copy-button-icon"
+            title="Copy referring file names"
+          }}
+        </button>
+
+        <div class="scrollable-block">
+          <table>
+            <tbody>
+              {{#each details.referenceFiles as |referrenceFile|}}
+                <tr>
+                  <td class="pr-3">
+                    {{#if referrenceFile.name}}
+                      <div>
+                        <span class="p-key">Name:</span>
+                        <span class="p-value">
+                          {{#if referrenceFile.link}}
+                            <a href={{referrenceFile.link}}>{{referrenceFile.name}}
+                              {{fa-icon
+                                "external-link-square"
+                                class="external-link-icon"
+                              }}</a>
+                          {{else}}
+                            {{referrenceFile.name}}
+                          {{/if}}
+                        </span>
+                      </div>
+                    {{/if}}
+                    {{#if referrenceFile.type}}
+                      <div>
+                        <span class="p-key">Type:</span>
+                        <span class="p-value">{{referrenceFile.type}}</span>
+                      </div>
+                    {{/if}}
+                    {{#if referrenceFile.detections}}
+                      <div>
+                        <span class="p-key">Detections:</span>
+                        <span class="p-value">{{referrenceFile.detections}}</span>
+                      </div>
+                    {{/if}}
+                    {{#if referrenceFile.scannedDate}}
+                      <div>
+                        <span class="p-key">Scanned:</span>
+                        <span class="p-value">
+                          {{#if (eq referrenceFile.scannedDate "-")}}
+                            -
+                          {{else}}
+                            {{moment-format
+                              referrenceFile.scannedDate
+                              "YYYY-MM-DD HH:mm:ss UTC"
+                            }}
+                          {{/if}}
+                        </span>
+                      </div>
+                    {{/if}}
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </div>
       {{/if}}
 
+    <div class="toggle-header">
+      <span class="p-action" {{action "toggleShowResults" "showHistoricalWhois"}}>
+        {{fa-icon "project-diagram" fixedWidth=true}}
+        {{#if block._state.loadingWhois}}
+          {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+          Loading Whois ...
+        {{else}}
+          Historical Whois Lookups ({{details.historicalWhoIs.length}})
+        {{/if}}
+        {{fa-icon (if showHistoricalWhois "caret-up" "caret-down") fixedWidth=true}}
+      </span>
+    </div>
 
-      <div class='toggle-header'>
-        <span class='p-action' {{action 'toggleShowResults' 'showHistoricalWhois'}}>
-          {{fa-icon 'project-diagram' fixedWidth=true}}
-          {{#if block._state.loadingWhois}}
-            {{fa-icon icon="spinner-third" spin=true fixedWidth=true}} Loading Whois ...
-          {{else}}
-            Historical Whois Lookups ({{details.historicalWhoIs.length}})
-          {{/if}}
-          {{fa-icon (if showHistoricalWhois 'caret-up' 'caret-down') fixedWidth=true}}
-        </span>
-      </div>
-
-      {{#if showHistoricalWhois}}
-        {{#if (gt details.historicalWhoIs.length 0)}}
-          {{#if block.entity.isIP}}
-          <div class='scan-results'>
+    {{#if showHistoricalWhois}}
+      {{#if (gt details.historicalWhoIs.length 0)}}
+        {{#if block.entity.isIP}}
+          <div class="scan-results">
             <table>
               <thead>
                 <tr>
@@ -499,21 +549,21 @@
             {{#each details.historicalWhoIs as |whoisRow index|}}
               <table>
                 <tbody>
-                  <tr {{action 'expandWhoIsRow' index}}>
+                  <tr {{action "expandWhoIsRow" index}}>
                     <td>
                       {{fa-icon
-                        (if (get expandedWhoisMap index) 'caret-up' 'caret-down')
+                        (if (get expandedWhoisMap index) "caret-up" "caret-down")
                         fixedWidth=true
                       }}
                     </td>
                     <td>
-                      <span class='p-key'>{{moment-format
+                      <span class="p-key">{{moment-format
                           whoisRow.last_updated
-                          'YYYY-MM-DD'
+                          "YYYY-MM-DD"
                         }}</span>
                     </td>
                     <td>
-                      <span class='p-value'>
+                      <span class="p-value">
                         {{#if whoisRow.OrgName}}
                           {{whoisRow.OrgName}}
                         {{else}}
@@ -522,7 +572,7 @@
                       </span>
                     </td>
                     <td>
-                      <span class='p-value'>
+                      <span class="p-value">
                         {{#if whoisRow.OrgTechEmail}}
                           {{whoisRow.OrgTechEmail}}
                         {{else}}
@@ -534,16 +584,16 @@
                 </tbody>
               </table>
               {{#if (get expandedWhoisMap index)}}
-                <div class='whois-expanded'>
+                <div class="whois-expanded">
                   {{#each whoIsIpKeys as |ipKey|}}
                     {{#if (get whoisRow ipKey.key)}}
                       <div>
-                        <span class='p-key'>{{ipKey.key}}:</span>
-                        <span class='p-value'>
+                        <span class="p-key">{{ipKey.key}}:</span>
+                        <span class="p-value">
                           {{#if ipKey.isDate}}
                             {{moment-format
                               (get whoisRow ipKey.key)
-                              'YYYY-MM-DD HH:mm:ss UTC'
+                              "YYYY-MM-DD HH:mm:ss UTC"
                               timeZone=timezone
                             }}
                           {{else}}
@@ -558,7 +608,7 @@
             {{/each}}
           </div>
         {{else}}
-          <div class='scan-results'>
+          <div class="scan-results">
             <table>
               <thead>
                 <tr>
@@ -572,21 +622,21 @@
             {{#each details.historicalWhoIs as |whoisRow index|}}
               <table>
                 <tbody>
-                  <tr {{action 'expandWhoIsRow' index}}>
+                  <tr {{action "expandWhoIsRow" index}}>
                     <td>
                       {{fa-icon
-                        (if (get expandedWhoisMap index) 'caret-up' 'caret-down')
+                        (if (get expandedWhoisMap index) "caret-up" "caret-down")
                         fixedWidth=true
                       }}
                     </td>
                     <td>
-                      <span class='p-key'>{{moment-format
+                      <span class="p-key">{{moment-format
                           whoisRow.last_updated
-                          'YYYY-MM-DD'
+                          "YYYY-MM-DD"
                         }}</span>
                     </td>
                     <td>
-                      <span class='p-value'>
+                      <span class="p-value">
                         {{#if whoisRow.Registrar}}
                           {{whoisRow.Registrar}}
                         {{else}}
@@ -595,7 +645,7 @@
                       </span>
                     </td>
                     <td>
-                      <span class='p-value'>
+                      <span class="p-value">
                         {{#if whoisRow.Registrant}}
                           {{whoisRow.Registrant}}
                         {{else}}
@@ -607,16 +657,16 @@
                 </tbody>
               </table>
               {{#if (get expandedWhoisMap index)}}
-                <div class='whois-expanded'>
+                <div class="whois-expanded">
                   {{#each whoIsDomainKeys as |domainKey|}}
                     {{#if (get whoisRow domainKey.key)}}
                       <div>
-                        <span class='p-key'>{{domainKey.key}}:</span>
-                        <span class='p-value'>
+                        <span class="p-key">{{domainKey.key}}:</span>
+                        <span class="p-value">
                           {{#if domainKey.isDate}}
                             {{moment-format
                               (get whoisRow domainKey.key)
-                              'YYYY-MM-DD HH:mm:ss UTC'
+                              "YYYY-MM-DD HH:mm:ss UTC"
                             }}
                           {{else}}
                             {{get whoisRow domainKey.key}}
@@ -630,9 +680,8 @@
             {{/each}}
           </div>
         {{/if}}
-        {{else}}
-          <span>No historical whois information available</span>
-        {{/if}}
+      {{else}}
+        <span>No historical whois information available</span>
       {{/if}}
 
     {{/if}}
