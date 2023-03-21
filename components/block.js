@@ -123,18 +123,18 @@ polarity.export = PolarityComponent.extend({
   elementCircumference: Ember.computed('elementRadius', function () {
     return 2 * Math.PI * this.get('elementRadius');
   }),
-  _getStrokeOffset (ticScore, circumference) {
+  _getStrokeOffset(ticScore, circumference) {
     let progress = ticScore / this.details.total;
     return circumference * (1 - progress);
   },
-  _getThreatColor (ticScore) {
+  _getThreatColor(ticScore) {
     if (ticScore > 0) {
       return this.get('redThreat');
     } else {
       return this.get('greenThreat');
     }
   },
-  init () {
+  init() {
     this.set(
       'showScanResults',
       this.get('block.userOptions.showNoDetections') === false
@@ -307,7 +307,7 @@ polarity.export = PolarityComponent.extend({
       this.set(`expandedWhoisMap.${index}`, !this.get(`expandedWhoisMap.${index}`));
     }
   },
-  copyElementToClipboard (element) {
+  copyElementToClipboard(element) {
     window.getSelection().removeAllRanges();
     let range = document.createRange();
     range.selectNode(
@@ -317,14 +317,14 @@ polarity.export = PolarityComponent.extend({
     document.execCommand('copy');
     window.getSelection().removeAllRanges();
   },
-  getElementRange (element) {
+  getElementRange(element) {
     let range = document.createRange();
     range.selectNode(
       typeof element === 'string' ? document.getElementById(element) : element
     );
     return range;
   },
-  restoreCopyState (savedSettings) {
+  restoreCopyState(savedSettings) {
     const {
       activeTab,
       showFilesReferring,
