@@ -168,16 +168,14 @@ polarity.export = PolarityComponent.extend({
     this.set('block._state.loadingBehaviors', true);
     this.sendIntegrationMessage(payload)
       .then((behaviorSummary) => {
-        if (behaviorSummary) {
-          this.set('block.data.details.behaviorSummary', behaviorSummary);
-          this.set(
-            'showRegistryKeys',
-            typeof this.get('details.behaviorSummary.registry_keys_opened') ===
-              'undefined'
-          );
-          this.set('showFilesOpened', !this.get('details.behaviorSummary.files_opened'));
-          this.set('block._state.loadedBehaviors', true);
-        }
+        console.log('AAAAAAAAA', behaviorSummary);
+        this.set('block.data.details.behaviorSummary', behaviorSummary);
+        this.set(
+          'showRegistryKeys',
+          typeof this.get('details.behaviorSummary.registry_keys_opened') === 'undefined'
+        );
+        this.set('showFilesOpened', !this.get('details.behaviorSummary.files_opened'));
+        this.set('block._state.loadedBehaviors', true);
       })
       .catch((err) => {
         this.set('block._state.errorBehaviors', JSON.stringify(err, null, 4));

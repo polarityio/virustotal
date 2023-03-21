@@ -1007,7 +1007,11 @@ function getBehaviors (entity, options) {
             return reject(err);
           }
 
-          resolve(result.data);
+          if (result.data) {
+            resolve(result.data);
+          } else {
+            resolve([]);
+          }
         });
       });
     } else {

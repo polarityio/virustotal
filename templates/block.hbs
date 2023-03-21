@@ -110,7 +110,7 @@
         </a>
       </li>
     {{/if}}
-    {{#if behaviorSummary}}
+    {{#if (or block.entity.isMD5 block.entity.isSHA1 block.entity.isSHA256)}}
       <li class="nav-item">
         <a
           {{action "changeTab" "behaviorSummary"}}
@@ -382,9 +382,7 @@
         <span>No opened files information available</span>
       {{/if}}
     {{/if}}
-
   {{/if}}
-
   {{! end of behavior summary}}
 
   {{! START RELATIONS TAB }}
