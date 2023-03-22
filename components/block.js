@@ -9,7 +9,6 @@ polarity.export = PolarityComponent.extend({
   showFilesReferring: false,
   showCopyMessage: false,
   showHistoricalWhois: false,
-  behaviorSummary: null,
   expandedWhoisMap: Ember.computed.alias('block.data.details.expandedWhoisMap'),
   communityScoreWidth: Ember.computed('details.reputation', function () {
     let reputation = this.get('details.reputation');
