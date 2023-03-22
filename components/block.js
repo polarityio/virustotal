@@ -7,6 +7,7 @@ polarity.export = PolarityComponent.extend({
   maxUrlsToShow: 20,
   showScanResults: false,
   showFilesReferring: false,
+  showCopyMessage: false,
   showHistoricalWhois: false,
   behaviorSummary: null,
   expandedWhoisMap: Ember.computed.alias('block.data.details.expandedWhoisMap'),
@@ -171,7 +172,6 @@ polarity.export = PolarityComponent.extend({
     this.set('block._state.loadingBehaviors', true);
     this.sendIntegrationMessage(payload)
       .then((behaviorSummary) => {
-        console.log('AAAAAAAAA', behaviorSummary);
         this.set('block.data.details.behaviorSummary', behaviorSummary);
         this.set(
           'showRegistryKeys',
