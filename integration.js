@@ -511,11 +511,11 @@ const _processLookupItem = (
   showEntitiesWithNoDetections,
   showNoInfoTag
 ) => {
-  if(result && result.__keyLimitReached){
+  if (result && result.__keyLimitReached) {
     return {
       entity,
       data: null
-    }
+    };
   }
 
   const data = fp.get('data', result);
@@ -1017,7 +1017,11 @@ function getBehaviors(entity, options) {
             return reject(err);
           }
 
-          resolve(result.data);
+          if (result.data) {
+            resolve(result.data);
+          } else {
+            resolve([]);
+          }
         });
       });
     } else {
