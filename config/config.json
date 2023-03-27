@@ -1,4 +1,5 @@
 {
+  "polarityIntegrationUuid": "0c0202d0-ccc7-11ed-bd45-6147db7ef4b1",
   "name": "VirusTotal",
   "acronym": "VT",
   "description": "VirusTotal Integration for File and IP Address Reports via the v3.0 REST API",
