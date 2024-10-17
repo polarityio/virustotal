@@ -25,7 +25,7 @@ module.exports = {
   description:
     'VirusTotal Integration for File and IP Address Reports via the v3.0 REST API',
   defaultColor: 'light-pink',
-  entityTypes: ['url', 'domain', 'IPv4', 'hash'],
+  entityTypes: ['url', 'domain', 'IPv4', 'MD5', 'SHA1', 'SHA256'],
   /**
    * An array of style files (css or less) that will be included for your integration. Any styles specified in
    * the below files can be used in your custom template.
@@ -83,7 +83,7 @@ module.exports = {
     ca: '',
     // An HTTP proxy to be used. Supports proxy Auth with Basic Auth, identical to support for
     // the url parameter (by embedding the auth info in the uri)
-    proxy: ""
+    proxy: ''
   },
   logging: {
     level: 'info', //trace, debug, info, warn, error, fatal
