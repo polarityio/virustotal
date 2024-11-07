@@ -1,11 +1,11 @@
 {
   "name": "VirusTotal",
-  "version": "3.7.4",
+  "version": "3.7.5",
   "main": "./integration.js",
   "private": true,
   "dependencies": {
-    "async": "^3.2.4",
+    "async": "^3.2.5",
     "lodash": "^4.17.21",
-    "postman-request": "^2.88.1-postman.32"
+    "postman-request": "^2.88.1-postman.40"
   }
 }
