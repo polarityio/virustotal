@@ -4,8 +4,17 @@
   "acronym": "VT",
   "description": "VirusTotal Integration for File and IP Address Reports via the v3.0 REST API",
   "defaultColor": "light-pink",
-  "entityTypes": ["url", "domain", "IPv4", "MD5", "SHA1", "SHA256"],
-  "styles": ["./styles/styles.less"],
+  "entityTypes": [
+    "url",
+    "domain",
+    "IPv4",
+    "MD5",
+    "SHA1",
+    "SHA256"
+  ],
+  "styles": [
+    "./styles/styles.less"
+  ],
   "block": {
     "component": {
       "file": "./components/block.js"
@@ -174,5 +183,10 @@
       "userCanEdit": false,
       "adminOnly": true
     }
-  ]
+  ],
+  "reducer": {
+    "details": {
+      "file": "./reducers/details.json"
+    }
+  }
 }

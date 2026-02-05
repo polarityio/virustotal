@@ -1,0 +1,136 @@
+{
+  "type": "file",
+  "detectionsLink": "https://www.virustotal.com/gui/file/275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f/detection",
+  "relationsLink": "https://www.virustotal.com/gui/file/275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f/relations",
+  "detailsLink": "https://www.virustotal.com/gui/file/275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f/details",
+  "communityLink": "https://www.virustotal.com/gui/file/275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f/community",
+  "behaviorLink": "https://www.virustotal.com/gui/file/275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f/behavior",
+  "total": 70,
+  "reputation": -75,
+  "scan_date": "2024-01-15T14:32:18.000Z",
+  "positives": 45,
+  "positiveScans": [
+    {
+      "name": "Kaspersky",
+      "detected": true,
+      "result": "Trojan.Win32.Generic"
+    },
+    {
+      "name": "Microsoft",
+      "detected": true,
+      "result": "Trojan:Win32/Wacatac.B!ml"
+    },
+    {
+      "name": "CrowdStrike",
+      "detected": true,
+      "result": "Win/malicious_confidence_100%"
+    },
+    {
+      "name": "Fortinet",
+      "detected": true,
+      "result": "W32/GenKryptik.FQKZ"
+    },
+    {
+      "name": "BitDefender",
+      "detected": true,
+      "result": "Gen:Variant.Lazy.396318"
+    },
+    {
+      "name": "Sophos",
+      "detected": true,
+      "result": "Mal/Generic-S"
+    },
+    {
+      "name": "Avast",
+      "detected": true,
+      "result": "Win32:Malware-gen"
+    },
+    {
+      "name": "Symantec",
+      "detected": true,
+      "result": "Trojan.Gen.MBT"
+    },
+    {
+      "name": "ESET-NOD32",
+      "detected": true,
+      "result": "Win32/Kryptik.HXDJ"
+    },
+    {
+      "name": "TrendMicro",
+      "detected": true,
+      "result": "Trojan.Win32.EMOTET.YXCFZ"
+    }
+  ],
+  "names": [
+    "invoice_2024.exe",
+    "document.scr",
+    "payment_details.exe"
+  ],
+  "negativeScans": [
+    {
+      "name": "CAT-QuickHeal",
+      "detected": false,
+      "result": "Clean"
+    },
+    {
+      "name": "ALYac",
+      "detected": false,
+      "result": null
+    },
+    {
+      "name": "Cylance",
+      "detected": false,
+      "result": "Clean"
+    }
+  ],
+  "detailsTab": [
+    {
+      "key": "Basic Properties",
+      "isTitle": true
+    },
+    {
+      "key": "File type",
+      "path": "type_description",
+      "value": "Win32 EXE"
+    },
+    {
+      "key": "File size",
+      "path": "size",
+      "value": "2.45 MB (2569216 bytes)"
+    },
+    {
+      "key": "MD5",
+      "path": "md5",
+      "value": "8f4c3f3e8c5b7e9a2b1d4c6e8f9a0b1c"
+    },
+    {
+      "key": "SHA-1",
+      "path": "sha1",
+      "value": "a1b2c3d4e5f6789012345678901234567890abcd"
+    },
+    {
+      "key": "SHA-256",
+      "path": "sha256",
+      "value": "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f"
+    },
+    {
+      "key": "SSDEEP",
+      "path": "ssdeep",
+      "value": "49152:X7vR0qKZf0qKZf0qKZf0qKZf0qKZf0qKZf:X7v"
+    },
+    {
+      "key": "Magic",
+      "path": "magic",
+      "value": "PE32 executable (GUI) Intel 80386, for MS Windows"
+    }
+  ],
+  "tags": [
+    "peexe",
+    "overlay",
+    "runtime-modules",
+    "long-sleeps",
+    "detected-malicious"
+  ],
+  "compiledBaselineInvestigationRules": [],
+  "noInfoMessage": false
+}

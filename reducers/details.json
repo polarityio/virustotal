@@ -1,0 +1,67 @@
+{
+  "root": {
+    "path": "",
+    "on_null": "return_empty"
+  },
+  "pipeline": [
+    {
+      "op": "copy",
+      "from": "type",
+      "to": "reduced_results.type"
+    },
+    {
+      "op": "copy",
+      "from": "total",
+      "to": "reduced_results.total"
+    },
+    {
+      "op": "copy",
+      "from": "reputation",
+      "to": "reduced_results.reputation"
+    },
+    {
+      "op": "copy",
+      "from": "scan_date",
+      "to": "reduced_results.scan_date"
+    },
+    {
+      "op": "copy",
+      "from": "positives",
+      "to": "reduced_results.positives"
+    },
+    {
+      "op": "copy",
+      "from": "positiveScans",
+      "to": "reduced_results.positiveScans"
+    },
+    {
+      "op": "copy",
+      "from": "names",
+      "to": "reduced_results.names"
+    },
+    {
+      "op": "copy",
+      "from": "tags",
+      "to": "reduced_results.tags"
+    },
+    {
+      "op": "copy",
+      "from": "detailsTab",
+      "to": "reduced_results.detailsTab"
+    },
+    {
+      "op": "drop",
+      "paths": [
+        "reduced_results.positiveScans[].detected"
+      ]
+    },
+    {
+      "op": "prune",
+      "strategy": "empty_values",
+      "target": "reduced_results"
+    }
+  ],
+  "output": {
+    "result": "$working.reduced_results"
+  }
+}
