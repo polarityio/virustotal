@@ -443,18 +443,28 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
         headers: { 'x-apikey': options.apiKey }
       };
       requestWithDefaults(requestOptions, function (err, response, body) {
-        _handleRequestError(err, response, body, options, function (err, body) {
+        _handleRequestError(err, response, body, options, async function (err, body) {
           if (err) {
             Logger.error(err, 'Error Looking up Hash');
             return next(err);
           }
 
-          const formattedResult = _processLookupItem(
+          const formattedResult = await _processLookupItem(
             'file',
             body,
             entityLookup[fp.toLower(hashValue)],
             options[TYPES_BY_SHOW_NO_DETECTIONS.hash],
-            options.showNoInfoTag
+            options.showNoInfoTag,
+            options.runAllLookups ? (async (attributes) => {
+              try {
+                const behaviorSummary = await getBehaviors(entityLookup[fp.toLower(hashValue)], options);
+                attributes.behaviorSummary = behaviorSummary;
+              } catch (error) {
+                Logger.error('Error retrieving behaviour summary for hash lookup', error);
+              } finally {
+                return attributes;
+              }
+            }) : undefined
           );
 
           return next(null, formattedResult);
@@ -504,12 +514,13 @@ function _lookupUrl(entity, options, done) {
   });
 }
 
-const _processLookupItem = (
+const _processLookupItem = async (
   type,
   result,
   entity,
   showEntitiesWithNoDetections,
-  showNoInfoTag
+  showNoInfoTag,
+  getExtraDetails
 ) => {
   if (result && result.__keyLimitReached) {
     return {
@@ -559,6 +570,12 @@ const _processLookupItem = (
       entity,
       data: null
     };
+  }
+
+  // Retrieve any extra details just at this level in order to 
+  // make sure that the main data is valid
+  if (getExtraDetails && typeof getExtraDetails === 'function') {
+    await getExtraDetails(attributes);
   }
 
   const scans = fp.flow(
@@ -615,7 +632,10 @@ const _processLookupItem = (
           fp.orderBy('result', 'desc')
         )(scans),
         detailsTab,
-        tags: attributes.tags
+        tags: attributes.tags,
+        behaviorSummary: fp.get('behaviorSummary', attributes),
+        referenceFiles: fp.get('referenceFiles', attributes),
+        historicalWhoIs: fp.get('historicalWhoIs', attributes)
       }
     }
   };
@@ -730,7 +750,7 @@ function _lookupEntityType(type, entity, options, done) {
   Logger.debug({ requestOptions }, 'Request Options for Type detections Lookup');
 
   requestWithDefaults(requestOptions, function (err, response, body) {
-    _handleRequestError(err, response, body, options, function (err, result) {
+    _handleRequestError(err, response, body, options, async function (err, result) {
       if (err) {
         Logger.error({ err, result, type: _.startCase(type) }, 'Search Failed');
         return _.get(err, 'error.message', '').includes('is not a valid domain pattern')
@@ -738,12 +758,27 @@ function _lookupEntityType(type, entity, options, done) {
           : done(err);
       }
 
-      let lookupResults = _processLookupItem(
+      let lookupResults = await _processLookupItem(
         type,
         result,
         entity,
         options[TYPES_BY_SHOW_NO_DETECTIONS[type]],
-        options.showNoInfoTag
+        options.showNoInfoTag,
+        options.runAllLookups ? (async (attributes) => {
+          try {
+            if (['ip', 'domain'].includes(type)) {
+              const referenceFiles = await getRelations(entity, options);
+              const historicalWhoIs = await getWhois(entity, options);
+              
+              attributes.referenceFiles = referenceFiles;
+              attributes.historicalWhoIs = historicalWhoIs;
+            }
+          } catch (error) {
+            Logger.error('Error retrieving behaviour summary for hash lookup', error);
+          } finally {
+            return attributes;
+          }
+        }) : undefined
       );
 
       if (!fp.get('data.details', lookupResults)) return done();
