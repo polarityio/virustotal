@@ -443,31 +443,42 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
         headers: { 'x-apikey': options.apiKey }
       };
       requestWithDefaults(requestOptions, function (err, response, body) {
-        _handleRequestError(err, response, body, options, async function (err, body) {
+        _handleRequestError(err, response, body, options, function (err, body) {
           if (err) {
             Logger.error(err, 'Error Looking up Hash');
             return next(err);
           }
 
-          const formattedResult = await _processLookupItem(
+          const formattedResult = _processLookupItem(
             'file',
             body,
             entityLookup[fp.toLower(hashValue)],
             options[TYPES_BY_SHOW_NO_DETECTIONS.hash],
-            options.showNoInfoTag,
-            options.runAllLookups ? (async (attributes) => {
-              try {
-                const behaviorSummary = await getBehaviors(entityLookup[fp.toLower(hashValue)], options);
-                attributes.behaviorSummary = behaviorSummary;
-              } catch (error) {
-                Logger.error('Error retrieving behaviour summary for hash lookup', error);
-              } finally {
-                return attributes;
-              }
-            }) : undefined
+            options.showNoInfoTag
           );
 
-          return next(null, formattedResult);
+          if (
+            formattedResult &&
+            formattedResult.data &&
+            formattedResult.data.details &&
+            options.runAllLookups
+          ) {
+            return getBehaviors(entityLookup[fp.toLower(hashValue)], options)
+              .then((behaviorSummary) => {
+                formattedResult.data.details.behaviorSummary = {
+                  registry_keys_opened: behaviorSummary.registry_keys_opened,
+                  files_opened: behaviorSummary.files_opened,
+                };
+              })
+              .catch((error) => {
+                Logger.error('Error retrieving behaviour summary for hash lookup', error);
+              })
+              .finally(() => {
+                return next(null, formattedResult);
+              });
+          } else {
+            return next(null, formattedResult);
+          }
         });
       });
     },
@@ -514,13 +525,12 @@ function _lookupUrl(entity, options, done) {
   });
 }
 
-const _processLookupItem = async (
+const _processLookupItem = (
   type,
   result,
   entity,
   showEntitiesWithNoDetections,
-  showNoInfoTag,
-  getExtraDetails
+  showNoInfoTag
 ) => {
   if (result && result.__keyLimitReached) {
     return {
@@ -572,12 +582,6 @@ const _processLookupItem = async (
     };
   }
 
-  // Retrieve any extra details just at this level in order to 
-  // make sure that the main data is valid
-  if (getExtraDetails && typeof getExtraDetails === 'function') {
-    await getExtraDetails(attributes);
-  }
-
   const scans = fp.flow(
     fp.get('last_analysis_results'),
     map((scanResult, scanName) => ({
@@ -624,18 +628,17 @@ const _processLookupItem = async (
         positives: totalMalicious,
         positiveScans: fp.flow(
           fp.filter(fp.get('detected')),
+          fp.map(fp.omit('detected')),
           fp.orderBy('result', 'desc')
         )(scans),
         names: attributes.names,
         negativeScans: fp.flow(
           fp.filter(({ detected }) => !detected),
+          fp.map(fp.omit('detected')),
           fp.orderBy('result', 'desc')
         )(scans),
         detailsTab,
-        tags: attributes.tags,
-        behaviorSummary: fp.get('behaviorSummary', attributes),
-        referenceFiles: fp.get('referenceFiles', attributes),
-        historicalWhoIs: fp.get('historicalWhoIs', attributes)
+        tags: attributes.tags
       }
     }
   };
@@ -758,32 +761,31 @@ function _lookupEntityType(type, entity, options, done) {
           : done(err);
       }
 
-      let lookupResults = await _processLookupItem(
+      let lookupResults = _processLookupItem(
         type,
         result,
         entity,
         options[TYPES_BY_SHOW_NO_DETECTIONS[type]],
-        options.showNoInfoTag,
-        options.runAllLookups ? (async (attributes) => {
-          try {
-            if (['ip', 'domain'].includes(type)) {
-              const referenceFiles = await getRelations(entity, options);
-              const historicalWhoIs = await getWhois(entity, options);
-              
-              attributes.referenceFiles = referenceFiles;
-              attributes.historicalWhoIs = historicalWhoIs;
-            }
-          } catch (error) {
-            Logger.error('Error retrieving behaviour summary for hash lookup', error);
-          } finally {
-            return attributes;
-          }
-        }) : undefined
+        options.showNoInfoTag
       );
 
       if (!fp.get('data.details', lookupResults)) return done();
 
-      done(null, lookupResults);
+      if (options.runAllLookups && ['ip', 'domain'].includes(type)) {
+        return Promise.all([
+          getRelations(entity, options),
+          getWhois(entity, options)
+        ]).then(([referenceFiles, historicalWhoIs]) => {
+          lookupResults.data.details.referenceFiles = referenceFiles;
+          lookupResults.data.details.historicalWhoIs = historicalWhoIs;
+        }).catch(error => {
+          Logger.error('Error retrieving extra details for entity lookup', error);
+        }).finally(() => {
+          return done(null, lookupResults);
+        });
+      }
+
+      return done(null, lookupResults);
     });
   });
 }
