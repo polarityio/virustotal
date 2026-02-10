@@ -356,13 +356,24 @@
           {{else}}
             Registry Keys ({{if
               details.behaviorSummary.registry_keys_opened
-              details.behaviorSummary.registry_keys_opened.length
+              (if
+                (gt details.behaviorSummary.totalRegistryKeysOpened details.behaviorSummary.registry_keys_opened.length)
+                (concat details.behaviorSummary.registry_keys_opened.length "/" details.behaviorSummary.totalRegistryKeysOpened)
+                details.behaviorSummary.registry_keys_opened.length
+              )
               "0"
             }})
           {{/if}}
           {{fa-icon (if showRegistryKeys "caret-up" "caret-down") fixedWidth=true}}
         </span>
       </div>
+
+      {{#if (gt details.behaviorSummary.totalRegistryKeysOpened details.behaviorSummary.registry_keys_opened.length)}}
+        <a class="p-footnote" href="{{details.behaviorLink}}">
+          More registry keys were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
+          {{fa-icon "external-link-square" class="external-link-icon"}}
+        </a>
+      {{/if}}
 
       {{#if showRegistryKeys}}
         {{#if details.behaviorSummary.registry_keys_opened}}
@@ -389,13 +400,24 @@
           {{else}}
             Opened Files ({{if
               details.behaviorSummary.files_opened
-              details.behaviorSummary.files_opened.length
+              (if
+                (gt details.behaviorSummary.totalFilesOpened details.behaviorSummary.files_opened.length)
+                (concat details.behaviorSummary.files_opened.length "/" details.behaviorSummary.totalFilesOpened)
+                details.behaviorSummary.files_opened.length
+              )
               "0"
             }})
           {{/if}}
           {{fa-icon (if showFilesOpened "caret-up" "caret-down") fixedWidth=true}}
         </span>
       </div>
+
+      {{#if (gt details.behaviorSummary.totalFilesOpened details.behaviorSummary.files_opened.length)}}
+        <a class="p-footnote" href="{{details.behaviorLink}}">
+          More files were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
+          {{fa-icon "external-link-square" class="external-link-icon"}}
+        </a>
+      {{/if}}
 
       {{#if showFilesOpened}}
         {{#if details.behaviorSummary.files_opened}}

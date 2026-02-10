@@ -465,10 +465,7 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
           ) {
             return getBehaviors(entityLookup[fp.toLower(hashValue)], options)
               .then((behaviorSummary) => {
-                formattedResult.data.details.behaviorSummary = {
-                  registry_keys_opened: behaviorSummary.registry_keys_opened,
-                  files_opened: behaviorSummary.files_opened,
-                };
+                formattedResult.data.details.behaviorSummary = behaviorSummary;
               })
               .catch((error) => {
                 Logger.error('Error retrieving behaviour summary for hash lookup', error);
@@ -753,7 +750,7 @@ function _lookupEntityType(type, entity, options, done) {
   Logger.debug({ requestOptions }, 'Request Options for Type detections Lookup');
 
   requestWithDefaults(requestOptions, function (err, response, body) {
-    _handleRequestError(err, response, body, options, async function (err, result) {
+    _handleRequestError(err, response, body, options, function (err, result) {
       if (err) {
         Logger.error({ err, result, type: _.startCase(type) }, 'Search Failed');
         return _.get(err, 'error.message', '').includes('is not a valid domain pattern')
@@ -1055,7 +1052,13 @@ function getBehaviors(entity, options) {
           }
 
           if (result.data) {
-            resolve(result.data);
+            const behaviorSummary = {
+              registry_keys_opened: result.data.registry_keys_opened.slice(0, 100), // display only first 100 registry keys to avoid overwhelming the csv export
+              totalRegistryKeysOpened: result.data.registry_keys_opened?.length ?? 0,
+              files_opened: result.data.files_opened.slice(0, 100), // display only first 100 files to avoid overwhelming the csv export
+              totalFilesOpened: result.data.files_opened?.length ?? 0
+            };
+            resolve(behaviorSummary);
           } else {
             resolve([]);
           }
