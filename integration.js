@@ -437,6 +437,7 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
     hashesArray,
     10,
     (hashValue, next) => {
+      const entity = entityLookup[fp.toLower(hashValue)];
       let requestOptions = {
         uri: `${LOOKUP_URI_BY_TYPE.hash}/${hashValue}`,
         method: 'GET',
@@ -452,18 +453,19 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
           const formattedResult = _processLookupItem(
             'file',
             body,
-            entityLookup[fp.toLower(hashValue)],
+            entity,
             options[TYPES_BY_SHOW_NO_DETECTIONS.hash],
             options.showNoInfoTag
           );
 
           if (
+            entity &&
             formattedResult &&
             formattedResult.data &&
             formattedResult.data.details &&
             options.runAllLookups
           ) {
-            return getBehaviors(entityLookup[fp.toLower(hashValue)], options)
+            return getBehaviors(entity, options)
               .then((behaviorSummary) => {
                 formattedResult.data.details.behaviorSummary = behaviorSummary;
               })
@@ -1053,19 +1055,19 @@ function getBehaviors(entity, options) {
 
           if (result.data) {
             const behaviorSummary = {
-              registry_keys_opened: result.data.registry_keys_opened.slice(0, 100), // display only first 100 registry keys to avoid overwhelming the csv export
+              registry_keys_opened: result.data.registry_keys_opened?.slice?.(0, 100) ?? [], // display only first 100 registry keys to avoid overwhelming the csv export
               totalRegistryKeysOpened: result.data.registry_keys_opened?.length ?? 0,
-              files_opened: result.data.files_opened.slice(0, 100), // display only first 100 files to avoid overwhelming the csv export
+              files_opened: result.data.files_opened?.slice?.(0, 100) ?? [], // display only first 100 files to avoid overwhelming the csv export
               totalFilesOpened: result.data.files_opened?.length ?? 0
             };
             resolve(behaviorSummary);
           } else {
-            resolve([]);
+            resolve({});
           }
         });
       });
     } else {
-      resolve([]);
+      resolve({});
     }
   });
 }

@@ -368,7 +368,12 @@
         </span>
       </div>
 
-      {{#if (gt details.behaviorSummary.totalRegistryKeysOpened details.behaviorSummary.registry_keys_opened.length)}}
+      {{#if (and
+        details.behaviorSummary
+        details.behaviorSummary.registry_keys_opened
+        details.behaviorSummary.totalRegistryKeysOpened
+        (gt details.behaviorSummary.totalRegistryKeysOpened details.behaviorSummary.registry_keys_opened.length)
+      )}}
         <a class="p-footnote" href="{{details.behaviorLink}}">
           More registry keys were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
           {{fa-icon "external-link-square" class="external-link-icon"}}
@@ -412,7 +417,12 @@
         </span>
       </div>
 
-      {{#if (gt details.behaviorSummary.totalFilesOpened details.behaviorSummary.files_opened.length)}}
+      {{#if (and
+        details.behaviorSummary
+        details.behaviorSummary.files_opened
+        details.behaviorSummary.totalFilesOpened
+        (gt details.behaviorSummary.totalFilesOpened details.behaviorSummary.files_opened.length)
+      )}}
         <a class="p-footnote" href="{{details.behaviorLink}}">
           More files were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
           {{fa-icon "external-link-square" class="external-link-icon"}}
