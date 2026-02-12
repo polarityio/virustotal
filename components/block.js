@@ -165,6 +165,7 @@ polarity.export = PolarityComponent.extend({
     const historicalWhoIs = this.get('block.data.details.historicalWhoIs');
     if (historicalWhoIs) {
       this.set('block._state.loadedWhois', true);
+      this.set('expandedWhoisMap', {});
     }
 
     const referenceFiles = this.get('block.data.details.referenceFiles');
