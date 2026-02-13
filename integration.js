@@ -53,6 +53,8 @@ const TYPES_BY_SHOW_NO_DETECTIONS = {
   url: 'showUrlsWithNoDetections'
 };
 
+const DATA_COUNT_LIMIT = 100;
+
 /**
  *
  * @param entities
@@ -1055,10 +1057,12 @@ function getBehaviors(entity, options) {
 
           if (result.data) {
             const behaviorSummary = {
-              registry_keys_opened: result.data.registry_keys_opened?.slice?.(0, 100) ?? [], // display only first 100 registry keys to avoid overwhelming the csv export
+              registry_keys_opened: result.data.registry_keys_opened?.slice?.(0, DATA_COUNT_LIMIT) ?? [], // display only first 100 registry keys to avoid overwhelming the csv export
               totalRegistryKeysOpened: result.data.registry_keys_opened?.length ?? 0,
-              files_opened: result.data.files_opened?.slice?.(0, 100) ?? [], // display only first 100 files to avoid overwhelming the csv export
-              totalFilesOpened: result.data.files_opened?.length ?? 0
+              hasMoreRegistryKeysOpened: result.data.registry_keys_opened?.length > DATA_COUNT_LIMIT,
+              files_opened: result.data.files_opened?.slice?.(0, DATA_COUNT_LIMIT) ?? [], // display only first 100 files to avoid overwhelming the csv export
+              totalFilesOpened: result.data.files_opened?.length ?? 0,
+              hasMoreFilesOpened: result.data.files_opened?.length > DATA_COUNT_LIMIT
             };
             resolve(behaviorSummary);
           } else {

@@ -357,7 +357,7 @@
             Registry Keys ({{if
               details.behaviorSummary.registry_keys_opened
               (if
-                (gt details.behaviorSummary.totalRegistryKeysOpened details.behaviorSummary.registry_keys_opened.length)
+                details.behaviorSummary.hasMoreRegistryKeysOpened
                 (concat details.behaviorSummary.registry_keys_opened.length "/" details.behaviorSummary.totalRegistryKeysOpened)
                 details.behaviorSummary.registry_keys_opened.length
               )
@@ -368,12 +368,7 @@
         </span>
       </div>
 
-      {{#if (and
-        details.behaviorSummary
-        details.behaviorSummary.registry_keys_opened
-        details.behaviorSummary.totalRegistryKeysOpened
-        (gt details.behaviorSummary.totalRegistryKeysOpened details.behaviorSummary.registry_keys_opened.length)
-      )}}
+      {{#if details.behaviorSummary.hasMoreRegistryKeysOpened}}
         <a class="p-footnote" href="{{details.behaviorLink}}">
           More registry keys were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
           {{fa-icon "external-link-square" class="external-link-icon"}}
@@ -406,7 +401,7 @@
             Opened Files ({{if
               details.behaviorSummary.files_opened
               (if
-                (gt details.behaviorSummary.totalFilesOpened details.behaviorSummary.files_opened.length)
+                details.behaviorSummary.hasMoreFilesOpened
                 (concat details.behaviorSummary.files_opened.length "/" details.behaviorSummary.totalFilesOpened)
                 details.behaviorSummary.files_opened.length
               )
@@ -417,12 +412,7 @@
         </span>
       </div>
 
-      {{#if (and
-        details.behaviorSummary
-        details.behaviorSummary.files_opened
-        details.behaviorSummary.totalFilesOpened
-        (gt details.behaviorSummary.totalFilesOpened details.behaviorSummary.files_opened.length)
-      )}}
+      {{#if details.behaviorSummary.hasMoreFilesOpened}}
         <a class="p-footnote" href="{{details.behaviorLink}}">
           More files were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
           {{fa-icon "external-link-square" class="external-link-icon"}}
