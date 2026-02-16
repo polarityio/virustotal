@@ -37,4 +37,5 @@ test-runner.js
 
 #Other
 legacy_wrapper.js
+legacy_shim.js
 .DS_Store

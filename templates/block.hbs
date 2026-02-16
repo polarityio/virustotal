@@ -368,13 +368,6 @@
         </span>
       </div>
 
-      {{#if details.behaviorSummary.hasMoreRegistryKeysOpened}}
-        <a class="p-footnote" href="{{details.behaviorLink}}">
-          More registry keys were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
-          {{fa-icon "external-link-square" class="external-link-icon"}}
-        </a>
-      {{/if}}
-
       {{#if showRegistryKeys}}
         {{#if details.behaviorSummary.registry_keys_opened}}
           <div class="scrollable-block">
@@ -386,6 +379,14 @@
               </tbody>
             </table>
           </div>
+          {{#if details.behaviorSummary.hasMoreRegistryKeysOpened}}
+            <div class="mt-1">
+              <a class="p-footnote" href="{{details.behaviorLink}}">
+                More registry keys were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
+                {{fa-icon "external-link-square" class="external-link-icon"}}
+              </a>
+            </div>
+          {{/if}}
         {{else}}
           <span>No registry key information available</span>
         {{/if}}
@@ -412,13 +413,6 @@
         </span>
       </div>
 
-      {{#if details.behaviorSummary.hasMoreFilesOpened}}
-        <a class="p-footnote" href="{{details.behaviorLink}}">
-          More files were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
-          {{fa-icon "external-link-square" class="external-link-icon"}}
-        </a>
-      {{/if}}
-
       {{#if showFilesOpened}}
         {{#if details.behaviorSummary.files_opened}}
           <div class="scrollable-block">
@@ -430,6 +424,14 @@
               </tbody>
             </table>
           </div>
+          {{#if details.behaviorSummary.hasMoreFilesOpened}}
+            <div class="mt-1">
+              <a class="p-footnote" href="{{details.behaviorLink}}">
+                More files were opened than are being displayed. You can view the full list in VirusTotal by clicking here.
+                {{fa-icon "external-link-square" class="external-link-icon"}}
+              </a>
+            </div>
+          {{/if}}
         {{else}}
           <span>No opened files information available</span>
         {{/if}}
