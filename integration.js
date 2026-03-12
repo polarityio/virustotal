@@ -4,7 +4,7 @@ const request = require('postman-request');
 const _ = require('lodash');
 const fp = require('lodash/fp');
 const map = require('lodash/fp/map').convert({ cap: false });
-const config = require('./config/config');
+const config = require('./config/config.json');
 const async = require('async');
 const PendingLookupCache = require('./lib/pending-lookup-cache');
 const fs = require('fs');
@@ -52,6 +52,8 @@ const TYPES_BY_SHOW_NO_DETECTIONS = {
   hash: 'showHashesWithNoDetections',
   url: 'showUrlsWithNoDetections'
 };
+
+const DATA_COUNT_LIMIT = 100;
 
 /**
  *
@@ -437,6 +439,7 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
     hashesArray,
     10,
     (hashValue, next) => {
+      const entity = entityLookup[fp.toLower(hashValue)];
       let requestOptions = {
         uri: `${LOOKUP_URI_BY_TYPE.hash}/${hashValue}`,
         method: 'GET',
@@ -452,12 +455,31 @@ function _lookupHash(hashesArray, entityLookup, options, done) {
           const formattedResult = _processLookupItem(
             'file',
             body,
-            entityLookup[fp.toLower(hashValue)],
+            entity,
             options[TYPES_BY_SHOW_NO_DETECTIONS.hash],
             options.showNoInfoTag
           );
 
-          return next(null, formattedResult);
+          if (
+            entity &&
+            formattedResult &&
+            formattedResult.data &&
+            formattedResult.data.details &&
+            options.runAllLookups
+          ) {
+            return getBehaviors(entity, options)
+              .then((behaviorSummary) => {
+                formattedResult.data.details.behaviorSummary = behaviorSummary;
+              })
+              .catch((error) => {
+                Logger.error('Error retrieving behaviour summary for hash lookup', error);
+              })
+              .finally(() => {
+                return next(null, formattedResult);
+              });
+          } else {
+            return next(null, formattedResult);
+          }
         });
       });
     },
@@ -607,11 +629,13 @@ const _processLookupItem = (
         positives: totalMalicious,
         positiveScans: fp.flow(
           fp.filter(fp.get('detected')),
+          fp.map(fp.omit('detected')),
           fp.orderBy('result', 'desc')
         )(scans),
         names: attributes.names,
         negativeScans: fp.flow(
           fp.filter(({ detected }) => !detected),
+          fp.map(fp.omit('detected')),
           fp.orderBy('result', 'desc')
         )(scans),
         detailsTab,
@@ -748,7 +772,21 @@ function _lookupEntityType(type, entity, options, done) {
 
       if (!fp.get('data.details', lookupResults)) return done();
 
-      done(null, lookupResults);
+      if (options.runAllLookups && ['ip', 'domain'].includes(type)) {
+        return Promise.all([
+          getRelations(entity, options),
+          getWhois(entity, options)
+        ]).then(([referenceFiles, historicalWhoIs]) => {
+          lookupResults.data.details.referenceFiles = referenceFiles;
+          lookupResults.data.details.historicalWhoIs = historicalWhoIs;
+        }).catch(error => {
+          Logger.error('Error retrieving extra details for entity lookup', error);
+        }).finally(() => {
+          return done(null, lookupResults);
+        });
+      }
+
+      return done(null, lookupResults);
     });
   });
 }
@@ -1018,14 +1056,22 @@ function getBehaviors(entity, options) {
           }
 
           if (result.data) {
-            resolve(result.data);
+            const behaviorSummary = {
+              registry_keys_opened: result.data.registry_keys_opened?.slice?.(0, DATA_COUNT_LIMIT) ?? [], // display only first 100 registry keys to avoid overwhelming the csv export
+              totalRegistryKeysOpened: result.data.registry_keys_opened?.length ?? 0,
+              hasMoreRegistryKeysOpened: result.data.registry_keys_opened?.length > DATA_COUNT_LIMIT,
+              files_opened: result.data.files_opened?.slice?.(0, DATA_COUNT_LIMIT) ?? [], // display only first 100 files to avoid overwhelming the csv export
+              totalFilesOpened: result.data.files_opened?.length ?? 0,
+              hasMoreFilesOpened: result.data.files_opened?.length > DATA_COUNT_LIMIT
+            };
+            resolve(behaviorSummary);
           } else {
-            resolve([]);
+            resolve({});
           }
         });
       });
     } else {
-      resolve([]);
+      resolve({});
     }
   });
 }
@@ -1052,34 +1098,7 @@ function startup(logger) {
     pendingLookupCache.setEnabled(true);
   }
 
-  let defaults = {};
-
-  if (typeof config.request.cert === 'string' && config.request.cert.length > 0) {
-    defaults.cert = fs.readFileSync(config.request.cert);
-  }
-
-  if (typeof config.request.key === 'string' && config.request.key.length > 0) {
-    defaults.key = fs.readFileSync(config.request.key);
-  }
-
-  if (
-    typeof config.request.passphrase === 'string' &&
-    config.request.passphrase.length > 0
-  ) {
-    defaults.passphrase = config.request.passphrase;
-  }
-
-  if (typeof config.request.ca === 'string' && config.request.ca.length > 0) {
-    defaults.ca = fs.readFileSync(config.request.ca);
-  }
-
-  if (typeof config.request.proxy === 'string' && config.request.proxy.length > 0) {
-    defaults.proxy = config.request.proxy;
-  }
-
-  defaults.json = true;
-
-  requestWithDefaults = request.defaults(defaults);
+  requestWithDefaults = request.defaults({ json: true });
 }
 
 function _logLookupStats() {

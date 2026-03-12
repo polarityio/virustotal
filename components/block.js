@@ -157,6 +157,22 @@ polarity.export = PolarityComponent.extend({
       this.set('block._state.showNames', true);
     }
 
+    const behaviorSummary = this.get('block.data.details.behaviorSummary');
+    if (behaviorSummary) {
+      this.set('block._state.loadedBehaviors', true);
+    }
+
+    const historicalWhoIs = this.get('block.data.details.historicalWhoIs');
+    if (historicalWhoIs) {
+      this.set('block._state.loadedWhois', true);
+      this.set('expandedWhoisMap', {});
+    }
+
+    const referenceFiles = this.get('block.data.details.referenceFiles');
+    if (referenceFiles) {
+      this.set('block._state.loadedRelations', true);
+    }
+
     let array = new Uint32Array(5);
     this.set('uniqueIdPrefix', window.crypto.getRandomValues(array).join(''));
 
